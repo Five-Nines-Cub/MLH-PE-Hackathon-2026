@@ -66,6 +66,7 @@ curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
 | GET    | `/urls/<id>`                  | Get URL by ID                            |
 | POST   | `/urls`                       | Create a short URL (auto-generates code) |
 | PUT    | `/urls/<id>`                  | Update title or is_active                |
+| DELETE | `/urls/<id>`                  | Delete a URL and its events (idempotent, always 204) |
 
 **Create URL body:**
 ```json
