@@ -43,6 +43,7 @@ docker compose up --build --scale web=<NumInstances>
 | GET    | `/users/<id>`     | Get user by ID           |
 | POST   | `/users`          | Create a user            |
 | PUT    | `/users/<id>`     | Update a user            |
+| DELETE | `/users/<id>`     | Delete a user            |
 | POST   | `/users/bulk`     | Bulk import from CSV     |
 
 **Create user body:**

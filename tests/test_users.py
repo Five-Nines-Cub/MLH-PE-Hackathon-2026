@@ -86,6 +86,21 @@ def test_list_users_pagination(client):
     assert len(res.get_json()) == 3
 
 
+def test_delete_user(client):
+    created = client.post("/users", json={"username": "dave", "email": "dave@example.com"})
+    user_id = created.get_json()["id"]
+
+    res = client.delete(f"/users/{user_id}")
+    assert res.status_code == 204
+
+    assert client.get(f"/users/{user_id}").status_code == 404
+
+
+def test_delete_user_not_found(client):
+    res = client.delete("/users/999")
+    assert res.status_code == 404
+
+
 def test_bulk_import(client):
     from io import BytesIO
 
