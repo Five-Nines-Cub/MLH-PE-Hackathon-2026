@@ -2,7 +2,6 @@ import json
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
-from peewee import IntegrityError
 
 from app.models.event import Event
 from app.models.url import Url, generate_short_code
@@ -69,6 +68,10 @@ def list_urls():
     user_id = request.args.get("user_id", type=int)
     if user_id is not None:
         query = query.where(Url.user == user_id)
+
+    is_active_param = request.args.get("is_active")
+    if is_active_param is not None:
+        query = query.where(Url.is_active == (is_active_param.lower() == "true"))
 
     return jsonify([u.to_dict() for u in query]), 200
 
