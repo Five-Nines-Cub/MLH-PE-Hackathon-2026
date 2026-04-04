@@ -1,8 +1,12 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
+// Allow overriding VUs via the VUS environment variable (e.g. VUS=100)
+const DEFAULT_VUS = 50;
+const vus = (typeof __ENV !== 'undefined' && __ENV.VUS) ? (parseInt(__ENV.VUS, 10) || DEFAULT_VUS) : DEFAULT_VUS;
+
 export let options = {
-  vus: 50,
+  vus: vus,
   duration: '1m',
   thresholds: {
     'http_req_failed': ['rate<0.01'], // fail if >1% errors

@@ -127,21 +127,23 @@ uv run pytest -m system
 
 The test DB runs on port `5433` with database `hackathon_test_db`. Tables are created and dropped automatically between tests.
 
-### All Tests
-```bash
-docker compose up db_test -d
-uv run pytest
-```
-
 ### Load Tests
-Requires the full stack (`web` + `db`) to be running.
-
+Requires the full stack (`web` + `db`) to be running. Start the docker container using:  
 ```bash
 docker compose up --build -d
+```
+
+Run the load tests using k6 with the default 50 concurrent users:  
+```bash
 docker compose run --rm k6 run --summary-export=/out/results.json /load_test_k6.js
 ```
 
-CI runs automatically on every push via GitHub Actions.
+To customize the number of concurrent users, set the VUS environment variable. Replace <ConcurrentUsers> with the number of virtual users you want to simulate:
+```bash
+docker compose run --rm -e VUS=<ConcurrentUsers> k6 run --summary-export=/out/results.json /load_test_k6.js
+```
+
+Tests run against a real PostgreSQL instance using the same `DATABASE_*` env vars. CI runs automatically on every push via GitHub Actions.
 
 ---
 
