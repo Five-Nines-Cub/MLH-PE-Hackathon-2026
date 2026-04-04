@@ -105,24 +105,43 @@ docker exec hackathon-db psql -U postgres -d hackathon_db -c "SELECT setval(pg_g
 ---
 
 ## Running Tests
-First, ensure that the docker container is running by following the instructions in [Quick Start](#Quick Start).  
 
-### Unit Tests  
-TODO:  
+```bash
+uv sync --group dev
+```
+
+### Unit Tests
+No database or Docker required — tests run entirely in-memory.
+
+```bash
+uv run pytest -m unit
+```
 
 ### System Tests
-TODO:  
-```
-uv sync --group dev
-uv run pytest -v
+Require the test database container to be running (separate from the app DB).
+
+```bash
+docker compose up db_test -d
+uv run pytest -m system
 ```
 
-### Load Tests:
+The test DB runs on port `5433` with database `hackathon_test_db`. Tables are created and dropped automatically between tests.
+
+### All Tests
 ```bash
+docker compose up db_test -d
+uv run pytest
+```
+
+### Load Tests
+Requires the full stack (`web` + `db`) to be running.
+
+```bash
+docker compose up --build -d
 docker compose run --rm k6 run --summary-export=/out/results.json /load_test_k6.js
 ```
 
-Tests run against a real PostgreSQL instance using the same `DATABASE_*` env vars. CI runs automatically on every push via GitHub Actions.
+CI runs automatically on every push via GitHub Actions.
 
 ---
 
@@ -141,7 +160,8 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 │       ├── urls.py
 │       └── events.py
 ├── tests/
-│   ├── conftest.py
+│   ├── conftest.py        # system test fixtures (test DB setup)
+│   ├── test_unit.py       # pure unit tests (no DB)
 │   ├── test_health.py
 │   ├── test_users.py
 │   ├── test_urls.py

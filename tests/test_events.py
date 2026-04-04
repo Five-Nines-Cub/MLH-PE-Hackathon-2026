@@ -1,3 +1,8 @@
+import pytest
+
+pytestmark = pytest.mark.system
+
+
 def test_list_events_empty(client):
     res = client.get("/events")
     assert res.status_code == 200

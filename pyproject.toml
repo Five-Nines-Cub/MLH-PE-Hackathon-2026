@@ -15,3 +15,7 @@ dev = ["pytest>=8.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "unit: pure unit tests, no DB or network required",
+    "system: integration tests that require a running database",
+]

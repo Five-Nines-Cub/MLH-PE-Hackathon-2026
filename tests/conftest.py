@@ -1,9 +1,17 @@
+import os
+
 import pytest
 
-from app.database import db
-from app.models.event import Event
-from app.models.url import Url
-from app.models.user import User
+os.environ.setdefault("DATABASE_NAME", "hackathon_test_db")
+os.environ.setdefault("DATABASE_HOST", "localhost")
+os.environ.setdefault("DATABASE_PORT", "5433")
+os.environ.setdefault("DATABASE_USER", "postgres")
+os.environ.setdefault("DATABASE_PASSWORD", "postgres")
+
+from app.database import db  # noqa: E402
+from app.models.event import Event  # noqa: E402
+from app.models.url import Url  # noqa: E402
+from app.models.user import User  # noqa: E402
 
 
 @pytest.fixture
