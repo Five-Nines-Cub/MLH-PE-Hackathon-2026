@@ -22,8 +22,8 @@ Screenshot of Github Action CI with passing tests:
 | Objective | Status | Notes |
 |-----------|--------|-------|
 | Set up k6 or Locust for load testing | ✅ Done | utilizes k6 docker image |
-| Simulate 50 concurrent users hitting your service | ✅ Done | INSERT PHOTO |
-| Document your Response Time (Latency) and Error Rate | ✅ Done | `http://localhost:8080/health` |
+| Simulate 50 concurrent users hitting your service | ✅ Done | See image below |
+| Document your Response Time (Latency) and Error Rate | ✅ Done | see image below |
 
 #### Verification  
 Screenshot of terminal output showing 50 concurrent users:  
@@ -39,6 +39,24 @@ Documented baseline p95 response time:
     http_req_failed
     ✓ 'rate<0.01' rate=0.00%
 ```
+
+### 🥈 Tier 2: Silver
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| 200 concurrent users for load testing | ✅ Done | Number of concurrent users can be configured in the command to run the tests |
+| Run 2+ instances of your app (containers) using Docker Compose | ✅ Done | Number of instances can be configured when starting up the container |
+| Put a Load Balancer (Nginx) in front to split traffic between instances | ✅ Done |  |
+| Keep response times under 3 seconds | ✅ Done | See image below |
+
+#### Verification  
+Screenshot of terminal output showing 200 concurrent users:  
+![50 Concurrent Users](/report-images/200_concurrent_test.png)
+
+Screenshot of terminal output showing 2 docker containers and nginx container:  
+![Docker and Nginx Containers](/report-images/docker_nginx_container.png)
+
+
 
 
 ---

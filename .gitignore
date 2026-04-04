@@ -26,6 +26,9 @@ uv.lock
 # pytest
 .pytest_cache/
 
+# k6 load test output
+results.json
+
 # OS
 .DS_Store
 Thumbs.db
