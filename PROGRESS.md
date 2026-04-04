@@ -5,10 +5,16 @@
 
 | Objective | Status | Notes |
 |-----------|--------|-------|
-| Write unit tests with pytest | ✅ Done | 28 tests across health, users, urls, events |
+| Write unit tests with pytest | ✅ Done | 39 unit + system tests across health, users, urls, events |
 | Set up GitHub Actions CI | ✅ Done | `.github/workflows/ci.yml` — runs on every push/PR |
 | `GET /health` endpoint returns 200 | ✅ Done | `http://localhost:8080/health` |
 
+#### Verification
+Screenshot of `GET /health` returning 200:
+![Health End Point](/report-images/Health_endpoint.png)
+
+Screenshot of Github Action CI with passing tests:
+![Github CI](/report-images/GithubCI.png)
 
 ## Scalability
 ### 🥉 Tier 1: Bronze
