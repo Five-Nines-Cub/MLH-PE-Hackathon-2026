@@ -37,7 +37,7 @@ def bulk_import():
         for batch in chunked(rows, 100):
             User.insert_many(batch).execute()
 
-    # Reset sequence so future auto-inserts don't conflict
+    # Reset sequence so future auto-inserts don't conflict with imported IDs
     db.execute_sql(
         "SELECT setval(pg_get_serial_sequence('users', 'id'), "
         "COALESCE((SELECT MAX(id) FROM users), 1))"

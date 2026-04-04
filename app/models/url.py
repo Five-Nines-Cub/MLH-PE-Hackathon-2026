@@ -1,6 +1,6 @@
 import secrets
 import string
-from datetime import datetime
+from datetime import datetime, timezone
 
 from peewee import AutoField, BooleanField, CharField, DateTimeField, ForeignKeyField, TextField
 
@@ -24,8 +24,8 @@ class Url(BaseModel):
     original_url = TextField()
     title = CharField(null=True)
     is_active = BooleanField(default=True)
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
         return {
