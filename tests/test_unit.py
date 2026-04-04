@@ -195,6 +195,24 @@ def test_list_events_body_event_type_unit(monkeypatch):
 
 # --- create_event ---
 
+def test_create_event_details_string_rejected_unit():
+    from app import create_app
+    app = create_app()
+    with app.test_client() as c:
+        res = c.post("/events", json={"url_id": 1, "event_type": "click", "details": "bad"})
+    assert res.status_code == 422
+    assert "details" in res.get_json()["error"]
+
+
+def test_create_event_details_list_rejected_unit():
+    from app import create_app
+    app = create_app()
+    with app.test_client() as c:
+        res = c.post("/events", json={"url_id": 1, "event_type": "click", "details": [1, 2, 3]})
+    assert res.status_code == 422
+    assert "details" in res.get_json()["error"]
+
+
 def test_create_event_missing_url_id_unit():
     from app import create_app
     app = create_app()

@@ -154,6 +154,18 @@ def test_redirect_fires_event(client, url):
     assert events[0]["event_type"] == "redirect"
 
 
+def test_create_event_details_string_rejected(client, url):
+    res = client.post("/events", json={"url_id": url["id"], "event_type": "click", "details": "bad"})
+    assert res.status_code == 422
+    assert "details" in res.get_json()["error"]
+
+
+def test_create_event_details_list_rejected(client, url):
+    res = client.post("/events", json={"url_id": url["id"], "event_type": "click", "details": ["bad"]})
+    assert res.status_code == 422
+    assert "details" in res.get_json()["error"]
+
+
 def test_create_event_without_details(client, user, url):
     res = client.post("/events", json={"url_id": url["id"], "user_id": user["id"], "event_type": "click"})
     assert res.status_code == 201
