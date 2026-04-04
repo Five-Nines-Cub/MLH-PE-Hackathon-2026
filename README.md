@@ -39,19 +39,10 @@ You need to work with around the seed files that you can find in [MLH PE Hackath
 # 1. Clone the repo
 git clone <repo-url> && cd mlh-pe-hackathon
 
-# 2. Install dependencies
-uv sync
+# 2. Start the docker container
+docker compose up --build
 
-# 3. Create the database
-createdb hackathon_db
-
-# 4. Configure environment
-cp .env.example .env   # edit if your DB credentials differ
-
-# 5. Run the server
-uv run run.py
-
-# 6. Verify
+# 3. Verify
 curl http://localhost:5000/health
 # → {"status":"ok"}
 ```
