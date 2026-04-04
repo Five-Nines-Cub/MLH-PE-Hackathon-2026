@@ -59,12 +59,13 @@ curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
 
 ### URLs
 
-| Method | Endpoint       | Description                              |
-|--------|----------------|------------------------------------------|
-| GET    | `/urls`        | List all URLs (optional `?user_id=`)     |
-| GET    | `/urls/<id>`   | Get URL by ID                            |
-| POST   | `/urls`        | Create a short URL (auto-generates code) |
-| PUT    | `/urls/<id>`   | Update title or is_active                |
+| Method | Endpoint                      | Description                              |
+|--------|-------------------------------|------------------------------------------|
+| GET    | `/urls`                       | List all URLs (optional `?user_id=`)     |
+| GET    | `/urls/<id>`                  | Get URL by ID                            |
+| POST   | `/urls`                       | Create a short URL (auto-generates code) |
+| PUT    | `/urls/<id>`                  | Update title or is_active                |
+| GET    | `/urls/<short_code>/redirect` | Redirect to original URL (302); 410 if inactive |
 
 **Create URL body:**
 ```json
