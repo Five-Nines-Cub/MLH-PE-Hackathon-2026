@@ -124,6 +124,33 @@ docker exec hackathon-db psql -U postgres -d hackathon_db -c "SELECT setval(pg_g
 
 ---
 
+## Running Specific Services
+
+The `docker-compose.yml` defines five services: `db`, `web`, `nginx`, `db_test`, and `k6`. You rarely need all of them at once.
+
+**App only (db + web + nginx) — typical dev workflow:**
+```bash
+docker compose up db web nginx --build
+```
+
+**App DB only — if you just need Postgres for local development:**
+```bash
+docker compose up db -d
+```
+
+**Test DB only — for system tests without spinning up the full app:**
+```bash
+docker compose up db_test -d
+```
+
+**Stop and remove a specific service:**
+```bash
+docker compose stop db_test
+docker compose rm -f db_test
+```
+
+---
+
 ## Running Tests
 
 ### Unit Tests
@@ -135,6 +162,12 @@ uv sync --group dev
 
 # 2. Run unit tests
 uv run pytest -m unit
+
+# Run a single test file
+uv run pytest tests/test_unit.py
+
+# Run a single test by name
+uv run pytest -m unit -k "test_name"
 ```
 
 ### System Tests
@@ -149,6 +182,14 @@ docker compose up db_test -d
 
 # 3. Run system tests
 uv run pytest -m system
+
+# Run system tests for a single resource
+uv run pytest tests/test_users.py
+uv run pytest tests/test_urls.py
+uv run pytest tests/test_events.py
+
+# Run a single test by name
+uv run pytest -m system -k "test_name"
 ```
 
 System tests run on a separate test_DB on port `5433` with database `hackathon_test_db`. Tables are created and dropped automatically between tests.
