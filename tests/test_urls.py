@@ -104,3 +104,38 @@ def test_list_urls_no_filter_returns_all(client, user):
     res = client.get("/urls")
     assert res.status_code == 200
     assert len(res.get_json()) == 2
+
+
+# --- redirect ---
+
+def test_redirect_valid_short_code(client, user):
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://example.com"})
+    short_code = created.get_json()["short_code"]
+
+    res = client.get(f"/urls/{short_code}/redirect")
+    assert res.status_code == 302
+    assert res.headers["Location"] == "https://example.com"
+
+
+def test_redirect_unknown_short_code(client):
+    res = client.get("/urls/XXXXXX/redirect")
+    assert res.status_code == 404
+
+
+def test_redirect_inactive_url(client, user):
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://example.com"})
+    url_id = created.get_json()["id"]
+    short_code = created.get_json()["short_code"]
+
+    client.put(f"/urls/{url_id}", json={"is_active": False})
+
+    res = client.get(f"/urls/{short_code}/redirect")
+    assert res.status_code == 410
+
+
+def test_short_codes_are_unique(client, user):
+    codes = set()
+    for i in range(20):
+        res = client.post("/urls", json={"user_id": user["id"], "original_url": f"https://example.com/{i}"})
+        codes.add(res.get_json()["short_code"])
+    assert len(codes) == 20
