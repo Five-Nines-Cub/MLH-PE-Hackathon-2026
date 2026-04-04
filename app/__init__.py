@@ -33,10 +33,20 @@ def create_app():
 
     @app.route("/<short_code>")
     def redirect_short_url(short_code):
+        from app.models.event import Event
+        import json as _json
         try:
             url = Url.get(Url.short_code == short_code, Url.is_active == True)
         except Url.DoesNotExist:
             return jsonify({"error": "URL not found"}), 404
+
+        Event.create(
+            url=url,
+            user=None,
+            event_type="redirect",
+            details=_json.dumps({"short_code": short_code}),
+        )
+
         return redirect(url.original_url, code=301)
 
     return app

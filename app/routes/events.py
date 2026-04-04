@@ -39,6 +39,10 @@ def create_event():
     if "event_type" not in data:
         return jsonify({"error": {"event_type": "event_type is required"}}), 422
 
+    details = data.get("details")
+    if details is not None and not isinstance(details, dict):
+        return jsonify({"error": {"details": "details must be a JSON object"}}), 422
+
     try:
         url = Url.get_by_id(data["url_id"])
     except Url.DoesNotExist:
@@ -51,7 +55,6 @@ def create_event():
         except User.DoesNotExist:
             return jsonify({"error": "User not found"}), 404
 
-    details = data.get("details")
     event = Event.create(
         url=url,
         user=user,
