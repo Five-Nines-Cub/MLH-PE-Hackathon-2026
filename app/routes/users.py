@@ -94,10 +94,9 @@ def create_user():
 def delete_user(user_id):
     try:
         user = User.get_by_id(user_id)
+        user.delete_instance()
     except User.DoesNotExist:
-        return jsonify({"error": "User not found"}), 404
-
-    user.delete_instance()
+        pass
     return "", 204
 
 

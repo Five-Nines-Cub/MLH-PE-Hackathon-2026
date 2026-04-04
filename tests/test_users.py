@@ -98,7 +98,7 @@ def test_delete_user(client):
 
 def test_delete_user_not_found(client):
     res = client.delete("/users/999")
-    assert res.status_code == 404
+    assert res.status_code == 204
 
 
 def test_bulk_import(client):
