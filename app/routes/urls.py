@@ -86,6 +86,17 @@ def get_url(url_id):
     return jsonify(url.to_dict()), 200
 
 
+@urls_bp.route("/<int:url_id>", methods=["DELETE"])
+def delete_url(url_id):
+    try:
+        url = Url.get_by_id(url_id)
+        Event.delete().where(Event.url == url).execute()
+        url.delete_instance()
+    except Url.DoesNotExist:
+        pass
+    return "", 204
+
+
 @urls_bp.route("/<int:url_id>", methods=["PUT"])
 def update_url(url_id):
     try:

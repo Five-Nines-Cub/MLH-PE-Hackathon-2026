@@ -68,6 +68,45 @@ def test_user_to_dict_null_timestamp():
     assert user.to_dict()["created_at"] is None
 
 
+# --- delete_url ---
+
+def test_delete_url_cascades_events_unit(monkeypatch):
+    from unittest.mock import MagicMock
+    from app import create_app
+    from app.models.url import Url
+    from app.models.event import Event
+
+    mock_url = MagicMock()
+    monkeypatch.setattr(Url, "get_by_id", staticmethod(lambda *_: mock_url))
+
+    mock_delete_query = MagicMock()
+    mock_delete_query.where.return_value = mock_delete_query
+    monkeypatch.setattr(Event, "delete", staticmethod(lambda: mock_delete_query))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.delete("/urls/1")
+
+    assert res.status_code == 204
+    mock_delete_query.where.assert_called_once()
+    mock_delete_query.execute.assert_called_once()
+    mock_url.delete_instance.assert_called_once()
+
+
+def test_delete_url_not_found_unit(monkeypatch):
+    from app import create_app
+    from app.models.url import Url
+
+    def raise_not_found(*_):
+        raise Url.DoesNotExist()
+    monkeypatch.setattr(Url, "get_by_id", staticmethod(raise_not_found))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.delete("/urls/999")
+    assert res.status_code == 204
+
+
 # --- redirect ---
 
 def test_redirect_url_active(monkeypatch):
