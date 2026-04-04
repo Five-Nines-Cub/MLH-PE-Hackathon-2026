@@ -1,3 +1,8 @@
+import pytest
+
+pytestmark = pytest.mark.system
+
+
 def test_list_users_empty(client):
     res = client.get("/users")
     assert res.status_code == 200

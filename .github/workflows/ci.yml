@@ -16,9 +16,9 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: hackathon_test
+          POSTGRES_DB: hackathon_test_db
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -27,8 +27,8 @@ jobs:
 
     env:
       DATABASE_HOST: localhost
-      DATABASE_PORT: 5432
-      DATABASE_NAME: hackathon_test
+      DATABASE_PORT: 5433
+      DATABASE_NAME: hackathon_test_db
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
 

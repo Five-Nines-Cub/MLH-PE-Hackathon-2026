@@ -1,5 +1,7 @@
 import pytest
 
+pytestmark = pytest.mark.system
+
 
 @pytest.fixture
 def user(client):
