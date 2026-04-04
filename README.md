@@ -86,6 +86,16 @@ Events are created automatically when a URL is created (`event_type: "created"`)
 
 ## Seed Data
 
+> **Note:** Seed data loads automatically on first startup via `seed/init.sql`. It only runs once when the database volume is empty.
+
+**Fresh setup (first time or full reset):**
+```bash
+docker compose down -v && docker compose up --build
+```
+⚠️ `-v` deletes all existing data. Only use this for a clean slate.
+
+**Already have data and just want to reseed manually:**
+
 ```bash
 # Copy CSVs into the db container
 docker cp users.csv hackathon-db:/tmp/users.csv
