@@ -9,13 +9,12 @@
 | Set up GitHub Actions CI | ✅ Done | `.github/workflows/ci.yml` — runs on every push/PR |
 | `GET /health` endpoint returns 200 | ✅ Done | `http://localhost:8080/health` |
 
-#### Verification
-Screenshot of `GET /health` returning 200:
+#### Verification  
+Screenshot of `GET /health` returning 200:  
+![Health End Point](/report-images/Health_endpoint.png)  
 
-![Health End Point](/report-images/Health_endpoint.png)
-
-Screenshot of Github Action CI with passing tests:
-![Github CI](/report-images/GithubCI.png)
+Screenshot of Github Action CI with passing tests:  
+![Github CI](/report-images/GithubCI.png)  
 
 ## Scalability
 ### 🥉 Tier 1: Bronze
