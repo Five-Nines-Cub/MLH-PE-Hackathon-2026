@@ -11,7 +11,7 @@ export let options = {
 };
 
 export default function () {
-  const url = 'http://web:5000/users'; // update path as needed
+  const url = 'http://nginx:80/users'; // update path as needed
   let res = http.get(url);
   check(res, { 'status is 200': (r) => r.status === 200 });
   sleep(1);

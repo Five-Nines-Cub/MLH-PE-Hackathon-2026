@@ -168,6 +168,9 @@ CI runs automatically on every push via GitHub Actions.
 │   └── test_events.py
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+├── load_test_k6.js
 ├── pyproject.toml
 └── .env.example
 ```
