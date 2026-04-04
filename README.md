@@ -6,7 +6,7 @@ A URL shortener REST API built with Flask, Peewee ORM, and PostgreSQL.
 
 ---
 
-## Quick Start
+## Starting The Docker Container
 
 ```bash
 # 1. Clone the repo
@@ -15,12 +15,11 @@ git clone <repo-url> && cd mlh-pe-hackathon
 # 2. Copy environment config
 cp .env.example .env
 
-# 3. Start the docker container
+# 3. Start the docker container (starts 2 instances by default)
 docker compose up --build
 
-# 4. Verify
-curl http://localhost:8080/health
-# → {"status":"ok"}
+# 4. Start the docker container with a specified number of instances
+docker compose up --build --scale web=<NumInstances>
 ```
 
 ---
@@ -106,40 +105,42 @@ docker exec hackathon-db psql -U postgres -d hackathon_db -c "SELECT setval(pg_g
 
 ## Running Tests
 
-```bash
-uv sync --group dev
-```
-
 ### Unit Tests
-No database or Docker required — tests run entirely in-memory.
+These tests test the smallest parts of the functionality in our program (functions, methods, classes etc). No database or Docker required to run these tests.
 
 ```bash
+# 1. Install prerequisite packages
+uv sync --group dev
+
+# 2. Run unit tests
 uv run pytest -m unit
 ```
 
 ### System Tests
-Require the test database container to be running (separate from the app DB).
+These tests test the api endpoints of our program. It requires the test database container to be running (separate from the app DB). 
 
 ```bash
+# 1. Install prerequisite packages
+uv sync --group dev
+
+# 2. Start up the test docker container
 docker compose up db_test -d
+
+# 3. Run system tests
 uv run pytest -m system
 ```
 
-The test DB runs on port `5433` with database `hackathon_test_db`. Tables are created and dropped automatically between tests.
+System tests run on a separate test_DB on port `5433` with database `hackathon_test_db`. Tables are created and dropped automatically between tests.
 
 ### Load Tests
-Requires the full stack (`web` + `db`) to be running. Start the docker container using:  
-```bash
-docker compose up --build -d
-```
+Before running the load tests, ensure that the docker instance is running. Follow the instructions in [Starting The Docker Container](#starting-the-docker-container) to start the docker instance. When starting the docker container, you can specify a specific number of instances.  
 
-Run the load tests using k6 with the default 50 concurrent users:  
+
 ```bash
+# Run the load tests using k6. default concurrent users = 50
 docker compose run --rm k6 run --summary-export=/out/results.json /load_test_k6.js
-```
 
-To customize the number of concurrent users, set the VUS environment variable. Replace <ConcurrentUsers> with the number of virtual users you want to simulate:
-```bash
+# Run the load tests with a specified number of concurrent users . Replace <ConcurrentUsers> with an int
 docker compose run --rm -e VUS=<ConcurrentUsers> k6 run --summary-export=/out/results.json /load_test_k6.js
 ```
 
@@ -174,6 +175,7 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── requirements.txt
 ├── load_test_k6.js
 ├── pyproject.toml
+├── nginx.conf
 └── .env.example
 ```
 
