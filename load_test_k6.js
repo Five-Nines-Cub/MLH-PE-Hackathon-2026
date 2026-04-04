@@ -15,8 +15,8 @@ export let options = {
 };
 
 export default function () {
-  const url = 'http://nginx:80/users'; // update path as needed
-  let res = http.get(url);
-  check(res, { 'status is 200': (r) => r.status === 200 });
+  const url = 'http://nginx:80/OvfxQA'; // update path as needed
+  let res = http.get(url, { redirects: 0 });
+  check(res, { 'status is 301': (r) => r.status === 301 });
   sleep(1);
 }

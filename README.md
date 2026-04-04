@@ -136,7 +136,6 @@ System tests run on a separate test_DB on port `5433` with database `hackathon_t
 ### Load Tests
 Before running the load tests, ensure that the docker instance is running. Follow the instructions in [Starting The Docker Container](#starting-the-docker-container) to start the docker instance. When starting the docker container, you can specify a specific number of instances.  
 
-
 ```bash
 # Run the load tests using k6. default concurrent users = 50
 docker compose run --rm k6 run --summary-export=/out/results.json /load_test_k6.js
