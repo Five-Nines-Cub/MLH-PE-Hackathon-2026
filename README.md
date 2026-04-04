@@ -15,7 +15,7 @@ git clone <repo-url> && cd mlh-pe-hackathon
 # 2. Copy environment config
 cp .env.example .env
 
-# 3. Start the stack
+# 3. Start the docker container
 docker compose up --build
 
 # 4. Verify
@@ -105,10 +105,17 @@ docker exec hackathon-db psql -U postgres -d hackathon_db -c "SELECT setval(pg_g
 ---
 
 ## Running Tests
+First, ensure that the docker container is running by following the instructions in [Quick Start](#Quick Start).  
 
+### Unit Tests  
+TODO:  
+
+### System Tests
+TODO:  
+
+### Load Tests:
 ```bash
-uv sync --group dev
-uv run pytest -v
+docker compose run --rm k6 run --summary-export=/out/results.json /load_test_k6.js
 ```
 
 Tests run against a real PostgreSQL instance using the same `DATABASE_*` env vars. CI runs automatically on every push via GitHub Actions.

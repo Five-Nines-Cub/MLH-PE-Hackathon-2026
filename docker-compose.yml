@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16
@@ -27,6 +25,17 @@ services:
     command: flask run --host=0.0.0.0 --port=5000
     depends_on:
       - db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  k6:
+    image: grafana/k6
+    volumes:
+      - ./load_test_k6.js:/load_test_k6.js
+      - ./k6_out:/out
 
 volumes:
   pgdata:
