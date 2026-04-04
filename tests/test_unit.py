@@ -317,11 +317,14 @@ def test_delete_url_not_found_unit(monkeypatch):
 # --- redirect ---
 
 def test_redirect_url_active(monkeypatch):
+    from unittest.mock import MagicMock
     from app import create_app
     from app.models.url import Url
+    from app.models.event import Event
 
     url = Url(short_code="abc123", original_url="https://example.com", is_active=True)
     monkeypatch.setattr(Url, "get", staticmethod(lambda *_: url))
+    monkeypatch.setattr(Event, "create", staticmethod(lambda **_: MagicMock()))
 
     app = create_app()
     with app.test_client() as c:
