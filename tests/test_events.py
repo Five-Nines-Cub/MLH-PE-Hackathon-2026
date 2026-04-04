@@ -145,6 +145,15 @@ def test_filter_events_by_user_id_via_body(client, user, url):
     assert all(e["user_id"] == user["id"] for e in res.get_json())
 
 
+def test_redirect_fires_event(client, url):
+    short_code = url["short_code"]
+    client.get(f"/{short_code}", follow_redirects=False)
+
+    events = client.get(f"/events?url_id={url['id']}&event_type=redirect").get_json()
+    assert len(events) == 1
+    assert events[0]["event_type"] == "redirect"
+
+
 def test_create_event_without_details(client, user, url):
     res = client.post("/events", json={"url_id": url["id"], "user_id": user["id"], "event_type": "click"})
     assert res.status_code == 201
