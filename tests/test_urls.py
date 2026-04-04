@@ -107,6 +107,48 @@ def test_list_urls_no_filter_returns_all(client, user):
 
 
 
+def test_list_urls_filter_active(client, user):
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://active.com"})
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://inactive.com"})
+    url_id = created.get_json()["id"]
+    client.put(f"/urls/{url_id}", json={"is_active": False})
+
+    res = client.get("/urls?is_active=true")
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["is_active"] is True
+
+
+def test_list_urls_filter_inactive(client, user):
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://active.com"})
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://inactive.com"})
+    url_id = created.get_json()["id"]
+    client.put(f"/urls/{url_id}", json={"is_active": False})
+
+    res = client.get("/urls?is_active=false")
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["is_active"] is False
+
+
+def test_list_urls_filter_user_and_active(client, user):
+    other = client.post("/users", json={"username": "bob", "email": "bob@example.com"}).get_json()
+
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://alice-active.com"})
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://alice-inactive.com"})
+    client.put(f"/urls/{created.get_json()['id']}", json={"is_active": False})
+    client.post("/urls", json={"user_id": other["id"], "original_url": "https://bob-active.com"})
+
+    res = client.get(f"/urls?user_id={user['id']}&is_active=true")
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["user_id"] == user["id"]
+    assert urls[0]["is_active"] is True
+
+
 def test_short_codes_are_unique(client, user):
     codes = set()
     for i in range(20):

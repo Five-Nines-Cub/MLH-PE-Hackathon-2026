@@ -62,7 +62,7 @@ curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
 
 | Method | Endpoint                      | Description                              |
 |--------|-------------------------------|------------------------------------------|
-| GET    | `/urls`                       | List all URLs (optional `?user_id=`)     |
+| GET    | `/urls`                       | List all URLs (optional `?user_id=`, `?is_active=true\|false`, or both) |
 | GET    | `/urls/<id>`                  | Get URL by ID                            |
 | POST   | `/urls`                       | Create a short URL (auto-generates code) |
 | PUT    | `/urls/<id>`                  | Update title or is_active                |
