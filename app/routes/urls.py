@@ -73,19 +73,6 @@ def list_urls():
     return jsonify([u.to_dict() for u in query]), 200
 
 
-@urls_bp.route("/<short_code>/redirect", methods=["GET"])
-def redirect_url(short_code):
-    try:
-        url = Url.get(Url.short_code == short_code)
-    except Url.DoesNotExist:
-        return jsonify({"error": "Short code not found"}), 404
-
-    if not url.is_active:
-        return jsonify({"error": "URL is inactive"}), 410
-
-    from flask import redirect as flask_redirect
-    return flask_redirect(url.original_url, code=302)
-
 
 @urls_bp.route("/<int:url_id>", methods=["GET"])
 def get_url(url_id):

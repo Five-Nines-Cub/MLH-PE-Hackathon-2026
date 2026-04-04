@@ -27,11 +27,12 @@ curl http://localhost:8080/health
 
 ## API Reference
 
-### Health
+### Health & Redirect
 
-| Method | Endpoint  | Description |
-|--------|-----------|-------------|
-| GET    | `/health` | Returns `{"status":"ok"}` |
+| Method | Endpoint        | Description |
+|--------|-----------------|-------------|
+| GET    | `/health`       | Returns `{"status":"ok"}` |
+| GET    | `/<short_code>` | Redirects browser to original URL (301); 404 if inactive or not found |
 
 ---
 
@@ -65,7 +66,6 @@ curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
 | GET    | `/urls/<id>`                  | Get URL by ID                            |
 | POST   | `/urls`                       | Create a short URL (auto-generates code) |
 | PUT    | `/urls/<id>`                  | Update title or is_active                |
-| GET    | `/urls/<short_code>/redirect` | Redirect to original URL (302); 410 if inactive |
 
 **Create URL body:**
 ```json
@@ -166,7 +166,8 @@ CI runs automatically on every push via GitHub Actions.
 │   ├── test_health.py
 │   ├── test_users.py
 │   ├── test_urls.py
-│   └── test_events.py
+│   ├── test_events.py
+│   └── test_redirect.py
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
 ├── pyproject.toml

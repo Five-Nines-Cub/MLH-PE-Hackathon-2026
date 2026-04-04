@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect
 
 from app.database import init_db
 from app.routes import register_routes
@@ -28,5 +28,15 @@ def create_app():
     @app.route("/health")
     def health():
         return jsonify(status="ok")
+
+    from app.models.url import Url
+
+    @app.route("/<short_code>")
+    def redirect_short_url(short_code):
+        try:
+            url = Url.get(Url.short_code == short_code, Url.is_active == True)
+        except Url.DoesNotExist:
+            return jsonify({"error": "URL not found"}), 404
+        return redirect(url.original_url, code=301)
 
     return app
