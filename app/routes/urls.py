@@ -73,6 +73,7 @@ def list_urls():
     return jsonify([u.to_dict() for u in query]), 200
 
 
+
 @urls_bp.route("/<int:url_id>", methods=["GET"])
 def get_url(url_id):
     try:

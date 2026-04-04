@@ -68,6 +68,50 @@ def test_user_to_dict_null_timestamp():
     assert user.to_dict()["created_at"] is None
 
 
+# --- redirect ---
+
+def test_redirect_url_active(monkeypatch):
+    from app import create_app
+    from app.models.url import Url
+
+    url = Url(short_code="abc123", original_url="https://example.com", is_active=True)
+    monkeypatch.setattr(Url, "get", staticmethod(lambda *_: url))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.get("/abc123")
+    assert res.status_code == 301
+    assert res.headers["Location"] == "https://example.com"
+
+
+def test_redirect_url_inactive(monkeypatch):
+    from app import create_app
+    from app.models.url import Url
+
+    def raise_not_found(*_):
+        raise Url.DoesNotExist()
+    monkeypatch.setattr(Url, "get", staticmethod(raise_not_found))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.get("/abc123")
+    assert res.status_code == 404
+
+
+def test_redirect_url_not_found(monkeypatch):
+    from app import create_app
+    from app.models.url import Url
+
+    def raise_not_found(*_):
+        raise Url.DoesNotExist()
+    monkeypatch.setattr(Url, "get", staticmethod(raise_not_found))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.get("/XXXXXX")
+    assert res.status_code == 404
+
+
 # --- Url.to_dict ---
 
 def test_url_to_dict():

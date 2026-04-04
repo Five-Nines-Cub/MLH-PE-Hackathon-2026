@@ -26,11 +26,12 @@ docker compose up --build --scale web=<NumInstances>
 
 ## API Reference
 
-### Health
+### Health & Redirect
 
-| Method | Endpoint  | Description |
-|--------|-----------|-------------|
-| GET    | `/health` | Returns `{"status":"ok"}` |
+| Method | Endpoint        | Description |
+|--------|-----------------|-------------|
+| GET    | `/health`       | Returns `{"status":"ok"}` |
+| GET    | `/<short_code>` | Redirects browser to original URL (301); 404 if inactive or not found |
 
 ---
 
@@ -58,12 +59,12 @@ curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
 
 ### URLs
 
-| Method | Endpoint       | Description                              |
-|--------|----------------|------------------------------------------|
-| GET    | `/urls`        | List all URLs (optional `?user_id=`)     |
-| GET    | `/urls/<id>`   | Get URL by ID                            |
-| POST   | `/urls`        | Create a short URL (auto-generates code) |
-| PUT    | `/urls/<id>`   | Update title or is_active                |
+| Method | Endpoint                      | Description                              |
+|--------|-------------------------------|------------------------------------------|
+| GET    | `/urls`                       | List all URLs (optional `?user_id=`)     |
+| GET    | `/urls/<id>`                  | Get URL by ID                            |
+| POST   | `/urls`                       | Create a short URL (auto-generates code) |
+| PUT    | `/urls/<id>`                  | Update title or is_active                |
 
 **Create URL body:**
 ```json
@@ -168,7 +169,8 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 │   ├── test_health.py
 │   ├── test_users.py
 │   ├── test_urls.py
-│   └── test_events.py
+│   ├── test_events.py
+│   └── test_redirect.py
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
 ├── Dockerfile

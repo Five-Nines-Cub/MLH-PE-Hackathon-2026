@@ -104,3 +104,12 @@ def test_list_urls_no_filter_returns_all(client, user):
     res = client.get("/urls")
     assert res.status_code == 200
     assert len(res.get_json()) == 2
+
+
+
+def test_short_codes_are_unique(client, user):
+    codes = set()
+    for i in range(20):
+        res = client.post("/urls", json={"user_id": user["id"], "original_url": f"https://example.com/{i}"})
+        codes.add(res.get_json()["short_code"])
+    assert len(codes) == 20
