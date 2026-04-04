@@ -163,6 +163,9 @@ uv sync --group dev
 # 2. Run unit tests
 uv run pytest -m unit
 
+# Run with coverage
+uv run pytest -m unit --cov
+
 # Run a single test file
 uv run pytest tests/test_unit.py
 
@@ -182,6 +185,9 @@ docker compose up db_test -d
 
 # 3. Run system tests
 uv run pytest -m system
+
+# Run with coverage
+uv run pytest -m system --cov
 
 # Run system tests for a single resource
 uv run pytest tests/test_users.py
@@ -239,6 +245,37 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── nginx.conf
 └── .env.example
 ```
+
+## Error Handling
+
+All errors are returned as JSON — never HTML.
+
+### 404 — Not Found
+
+Two layers handle 404s:
+
+1. **Route-level** — each handler catches Peewee's `DoesNotExist` and returns a specific message.
+2. **Global fallback** — `@app.errorhandler(404)` catches any unmatched route and returns `{"error": "Not found"}`.
+
+| Endpoint | Trigger |
+|----------|---------|
+| `GET /users/<id>` | User ID not in DB |
+| `PUT /users/<id>` | User ID not in DB |
+| `GET /urls/<id>` | URL ID not in DB |
+| `PUT /urls/<id>` | URL ID not in DB |
+| `POST /urls` | `user_id` references a non-existent user |
+| `POST /events` | `url_id` or `user_id` references a non-existent record |
+| `GET /<short_code>` | Short code not found or URL is inactive |
+| Any unknown route | No matching Flask route |
+
+### 500 — Internal Server Error
+
+Two layers handle 500s:
+
+1. **Route-level** — `POST /urls` explicitly returns 500 if short code generation fails after 10 collision attempts.
+2. **Global fallback** — `@app.errorhandler(500)` catches any unhandled exception and returns `{"error": "Internal server error"}`.
+
+---
 
 ## Prerequisites
 
