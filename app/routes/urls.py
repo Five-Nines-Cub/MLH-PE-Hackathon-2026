@@ -65,13 +65,18 @@ def create_url():
 def list_urls():
     query = Url.select().order_by(Url.id)
 
-    user_id = request.args.get("user_id", type=int)
+    body = request.get_json(silent=True) or {}
+
+    user_id = request.args.get("user_id", type=int) or body.get("user_id")
     if user_id is not None:
         query = query.where(Url.user == user_id)
 
-    is_active_param = request.args.get("is_active")
+    is_active_param = request.args.get("is_active") or body.get("is_active")
     if is_active_param is not None:
-        query = query.where(Url.is_active == (is_active_param.lower() == "true"))
+        if isinstance(is_active_param, bool):
+            query = query.where(Url.is_active == is_active_param)
+        else:
+            query = query.where(Url.is_active == (str(is_active_param).lower() == "true"))
 
     return jsonify([u.to_dict() for u in query]), 200
 

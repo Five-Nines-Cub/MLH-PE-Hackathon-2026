@@ -133,6 +133,30 @@ def test_list_urls_filter_inactive(client, user):
     assert urls[0]["is_active"] is False
 
 
+def test_list_urls_filter_user_via_body(client, user):
+    other = client.post("/users", json={"username": "bob", "email": "bob@example.com"}).get_json()
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://alice.com"})
+    client.post("/urls", json={"user_id": other["id"], "original_url": "https://bob.com"})
+
+    res = client.get("/urls", json={"user_id": user["id"]})
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["user_id"] == user["id"]
+
+
+def test_list_urls_filter_active_via_body(client, user):
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://active.com"})
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://inactive.com"})
+    client.put(f"/urls/{created.get_json()['id']}", json={"is_active": False})
+
+    res = client.get("/urls", json={"is_active": "true"})
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["is_active"] is True
+
+
 def test_list_urls_filter_user_and_active(client, user):
     other = client.post("/users", json={"username": "bob", "email": "bob@example.com"}).get_json()
 

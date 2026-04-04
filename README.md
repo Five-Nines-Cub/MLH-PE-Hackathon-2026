@@ -62,10 +62,10 @@ curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
 
 | Method | Endpoint                      | Description                              |
 |--------|-------------------------------|------------------------------------------|
-| GET    | `/urls`                       | List all URLs (optional `?user_id=`, `?is_active=true\|false`, or both) |
+| GET    | `/urls`                       | List all URLs — filter via query params or JSON body: `user_id`, `is_active=true\|false` |
 | GET    | `/urls/<id>`                  | Get URL by ID                            |
-| POST   | `/urls`                       | Create a short URL (auto-generates code) |
-| PUT    | `/urls/<id>`                  | Update title or is_active                |
+| POST   | `/urls`                       | Create a short URL (auto-generates 6-char code) |
+| PUT    | `/urls/<id>`                  | Update `title` or `is_active`            |
 | DELETE | `/urls/<id>`                  | Delete a URL and its events (idempotent, always 204) |
 
 **Create URL body:**
@@ -79,9 +79,17 @@ curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
 
 | Method | Endpoint   | Description       |
 |--------|------------|-------------------|
-| GET    | `/events`  | List all events   |
+| GET    | `/events`  | List all events — filter via query params or JSON body: `url_id`, `user_id`, `event_type` |
+| POST   | `/events`  | Create an event   |
 
-Events are created automatically when a URL is created (`event_type: "created"`).
+Events are created automatically when a URL is created (`event_type: "created"`). Additional events (e.g. `click`, `view`) can be created manually.
+
+**Create event body:**
+```json
+{ "url_id": 1, "user_id": 1, "event_type": "click", "details": { "referrer": "https://google.com" } }
+```
+
+`user_id` and `details` are optional.
 
 ---
 
@@ -180,8 +188,7 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 │   ├── test_health.py
 │   ├── test_users.py
 │   ├── test_urls.py
-│   ├── test_events.py
-│   └── test_redirect.py
+│   └── test_events.py
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
 ├── Dockerfile

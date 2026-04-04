@@ -68,6 +68,195 @@ def test_user_to_dict_null_timestamp():
     assert user.to_dict()["created_at"] is None
 
 
+# --- delete_user ---
+
+def test_delete_user_unit(monkeypatch):
+    from unittest.mock import MagicMock
+    from app import create_app
+    from app.models.user import User
+
+    mock_user = MagicMock()
+    monkeypatch.setattr(User, "get_by_id", staticmethod(lambda *_: mock_user))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.delete("/users/1")
+    assert res.status_code == 204
+    mock_user.delete_instance.assert_called_once()
+
+
+def test_delete_user_not_found_unit(monkeypatch):
+    from app import create_app
+    from app.models.user import User
+
+    def raise_not_found(*_):
+        raise User.DoesNotExist()
+    monkeypatch.setattr(User, "get_by_id", staticmethod(raise_not_found))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.delete("/users/999")
+    assert res.status_code == 204
+
+
+# --- list_urls body filtering ---
+
+def test_list_urls_body_user_id_unit(monkeypatch):
+    from unittest.mock import MagicMock
+    from app import create_app
+    from app.models.url import Url
+
+    mock_query = MagicMock()
+    mock_query.order_by.return_value = mock_query
+    mock_query.where.return_value = mock_query
+    mock_query.__iter__ = MagicMock(return_value=iter([]))
+    monkeypatch.setattr(Url, "select", staticmethod(lambda: mock_query))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.get("/urls", json={"user_id": 1})
+    assert res.status_code == 200
+    mock_query.where.assert_called()
+
+
+def test_list_urls_body_is_active_unit(monkeypatch):
+    from unittest.mock import MagicMock
+    from app import create_app
+    from app.models.url import Url
+
+    mock_query = MagicMock()
+    mock_query.order_by.return_value = mock_query
+    mock_query.where.return_value = mock_query
+    mock_query.__iter__ = MagicMock(return_value=iter([]))
+    monkeypatch.setattr(Url, "select", staticmethod(lambda: mock_query))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.get("/urls", json={"is_active": "true"})
+    assert res.status_code == 200
+    mock_query.where.assert_called()
+
+
+# --- list_events body filtering ---
+
+def test_list_events_body_url_id_unit(monkeypatch):
+    from unittest.mock import MagicMock
+    from app import create_app
+    from app.models.event import Event
+
+    mock_query = MagicMock()
+    mock_query.order_by.return_value = mock_query
+    mock_query.where.return_value = mock_query
+    mock_query.__iter__ = MagicMock(return_value=iter([]))
+    monkeypatch.setattr(Event, "select", staticmethod(lambda: mock_query))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.get("/events", json={"url_id": 1})
+    assert res.status_code == 200
+    mock_query.where.assert_called()
+
+
+def test_list_events_body_user_id_unit(monkeypatch):
+    from unittest.mock import MagicMock
+    from app import create_app
+    from app.models.event import Event
+
+    mock_query = MagicMock()
+    mock_query.order_by.return_value = mock_query
+    mock_query.where.return_value = mock_query
+    mock_query.__iter__ = MagicMock(return_value=iter([]))
+    monkeypatch.setattr(Event, "select", staticmethod(lambda: mock_query))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.get("/events", json={"user_id": 1})
+    assert res.status_code == 200
+    mock_query.where.assert_called()
+
+
+def test_list_events_body_event_type_unit(monkeypatch):
+    from unittest.mock import MagicMock
+    from app import create_app
+    from app.models.event import Event
+
+    mock_query = MagicMock()
+    mock_query.order_by.return_value = mock_query
+    mock_query.where.return_value = mock_query
+    mock_query.__iter__ = MagicMock(return_value=iter([]))
+    monkeypatch.setattr(Event, "select", staticmethod(lambda: mock_query))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.get("/events", json={"event_type": "click"})
+    assert res.status_code == 200
+    mock_query.where.assert_called()
+
+
+# --- create_event ---
+
+def test_create_event_missing_url_id_unit():
+    from app import create_app
+    app = create_app()
+    with app.test_client() as c:
+        res = c.post("/events", json={"event_type": "click"})
+    assert res.status_code == 422
+    assert "url_id" in res.get_json()["error"]
+
+
+def test_create_event_missing_event_type_unit():
+    from app import create_app
+    app = create_app()
+    with app.test_client() as c:
+        res = c.post("/events", json={"url_id": 1})
+    assert res.status_code == 422
+    assert "event_type" in res.get_json()["error"]
+
+
+def test_create_event_url_not_found_unit(monkeypatch):
+    from app import create_app
+    from app.models.url import Url
+
+    def raise_not_found(*_):
+        raise Url.DoesNotExist()
+    monkeypatch.setattr(Url, "get_by_id", staticmethod(raise_not_found))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.post("/events", json={"url_id": 999, "event_type": "click"})
+    assert res.status_code == 404
+
+
+def test_create_event_valid_unit(monkeypatch):
+    from unittest.mock import MagicMock
+    from app import create_app
+    from app.models.url import Url
+    from app.models.user import User
+    from app.models.event import Event
+
+    mock_url = MagicMock()
+    mock_user = MagicMock()
+    mock_event = MagicMock()
+    mock_event.to_dict.return_value = {
+        "id": 1, "url_id": 1, "user_id": 1,
+        "event_type": "click", "timestamp": "2026-01-01T00:00:00",
+        "details": {"referrer": "https://google.com"},
+    }
+    monkeypatch.setattr(Url, "get_by_id", staticmethod(lambda *_: mock_url))
+    monkeypatch.setattr(User, "get_by_id", staticmethod(lambda *_: mock_user))
+    monkeypatch.setattr(Event, "create", staticmethod(lambda **_: mock_event))
+
+    app = create_app()
+    with app.test_client() as c:
+        res = c.post("/events", json={
+            "url_id": 1, "user_id": 1,
+            "event_type": "click",
+            "details": {"referrer": "https://google.com"},
+        })
+    assert res.status_code == 201
+    assert res.get_json()["event_type"] == "click"
+
+
 # --- delete_url ---
 
 def test_delete_url_cascades_events_unit(monkeypatch):
