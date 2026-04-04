@@ -43,7 +43,7 @@ git clone <repo-url> && cd mlh-pe-hackathon
 docker compose up --build
 
 # 3. Verify
-curl http://localhost:5000/health
+curl http://localhost:8080/health
 # → {"status":"ok"}
 ```
 
