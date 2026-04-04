@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 from peewee import IntegrityError
@@ -39,7 +39,7 @@ def create_url():
         short_code = _make_short_code()
     except RuntimeError:
         return jsonify({"error": "Could not generate unique short code"}), 500
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     url = Url.create(
         user=user,
@@ -96,7 +96,7 @@ def update_url(url_id):
     if "is_active" in data:
         url.is_active = data["is_active"]
 
-    url.updated_at = datetime.utcnow()
+    url.updated_at = datetime.now(timezone.utc)
     url.save()
 
     return jsonify(url.to_dict()), 200
