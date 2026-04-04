@@ -112,6 +112,10 @@ TODO:
 
 ### System Tests
 TODO:  
+```
+uv sync --group dev
+uv run pytest -v
+```
 
 ### Load Tests:
 ```bash
