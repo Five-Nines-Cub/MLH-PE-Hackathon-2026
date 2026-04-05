@@ -59,7 +59,7 @@ docker exec hackathon-db psql -U postgres -d hackathon_db -c "SELECT setval(pg_g
 
 ## Running Specific Services
 
-The `docker-compose.yml` defines the following services: `db`, `web`, `nginx`, `redis`, `fluent-bit`, `db_test`, and `k6`. You rarely need all of them at once.
+The `docker-compose.yml` defines the following services: `db`, `web`, `nginx`, `redis`, `fluent-bit`, `prometheus`, `grafana`, `db_test`, and `k6`. You rarely need all of them at once.
 
 **App only (db + redis + web + nginx) — typical dev workflow:**
 ```bash
@@ -71,6 +71,16 @@ docker compose up db redis web nginx --build
 docker compose up db redis web nginx fluent-bit --build
 ```
 
+**With full observability stack (Prometheus + Grafana dashboard on :3000):**
+```bash
+docker compose up db redis web nginx prometheus grafana --build
+```
+
+**Full stack (everything):**
+```bash
+docker compose up db redis web nginx fluent-bit prometheus grafana --build
+```
+
 **App DB only — if you just need Postgres for local development:**
 ```bash
 docker compose up db -d
@@ -78,7 +88,7 @@ docker compose up db -d
 
 **Test DB only — for system tests without spinning up the full app:**
 ```bash
-docker compose up db_test -d
+docker compose up db_test redis -d
 ```
 
 **Stop and remove a specific service:**
@@ -217,6 +227,13 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── nginx.conf
 ├── fluent-bit.conf        # Fluent Bit log shipper config (ships to Better Stack)
 ├── parsers.conf           # Fluent Bit JSON parser (unwraps app JSON logs)
+├── prometheus.yml         # Prometheus scrape config (scrapes both web containers)
+├── grafana/
+│   ├── provisioning/
+│   │   ├── datasources/   # auto-configures Prometheus as Grafana datasource
+│   │   └── dashboards/    # auto-loads dashboard on startup
+│   └── dashboards/
+│       └── app.json       # dashboard: Traffic, Errors, Latency, CPU, RAM
 └── .env.example
 ```
 
@@ -245,6 +262,29 @@ Logs are shipped to [Better Stack](https://betterstack.com) via Fluent Bit. Requ
 curl http://localhost:8080/metrics/
 # {"cpu_percent": 0.3, "ram_percent": 19.1, "ram_total": ..., "ram_used": ...}
 ```
+
+**Prometheus metrics endpoint** (scraped by Prometheus every 15s):
+```bash
+curl http://localhost:5000/prom/metrics
+```
+
+---
+
+## Grafana Dashboard
+
+A pre-built dashboard tracks 4 key metrics across both web containers:
+
+| Panel | Metric | Query |
+|-------|--------|-------|
+| Request Rate | Traffic | `rate(flask_http_request_total[1m])` |
+| Error Rate | Errors | % of 4xx/5xx responses |
+| Latency | Latency | p50 / p95 / p99 histogram |
+| CPU % | Saturation | `app_cpu_percent` |
+| RAM % | Saturation | `app_ram_percent` |
+
+**Access:** `http://localhost:3000` — login: `admin` / `<GRAFANA_PASSWORD>`
+
+The dashboard and Prometheus datasource are provisioned automatically on first startup — no manual setup needed.
 
 ---
 

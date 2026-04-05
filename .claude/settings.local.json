@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker compose:*)",
+      "Bash(curl -s \"http://localhost:9090/api/v1/targets\")",
+      "Bash(python3 -m json.tool)"
+    ]
+  }
+}

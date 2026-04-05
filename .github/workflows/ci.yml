@@ -71,6 +71,7 @@ jobs:
               echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}"
               echo "BETTERSTACK_TOKEN=${{ secrets.BETTERSTACK_TOKEN }}"
               echo "BETTERSTACK_HOST=${{ secrets.BETTERSTACK_HOST }}"
+              echo "GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}"
             } > .env
 
             docker compose up db redis -d
@@ -80,3 +81,4 @@ jobs:
             docker compose stop nginx
             docker compose up nginx -d
             docker compose up fluent-bit -d
+            docker compose up prometheus grafana -d
