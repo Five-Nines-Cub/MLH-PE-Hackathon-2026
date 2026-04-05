@@ -261,7 +261,7 @@ alert:
 | Objective | Status | Notes |
 |-----------|--------|-------|
 | Build a visual dashboard tracking 4+ metrics (Latency, Traffic, Errors, Saturation) | ✅ Done | Grafana dashboard with 5 panels — Traffic, Error Rate, Latency p50/p95/p99, CPU, RAM |
-| Write a runbook — "In Case of Emergency" guide | ⬜ Todo | |
+| Write a runbook — "In Case of Emergency" guide | ✅ Done | [service-down.md](runbooks/service-down.md) and [high-error-rate.md](runbooks/high-error-rate.md) |
 | Diagnose a fake issue using only the dashboard and logs | ⬜ Todo | |
 
 #### Verification

@@ -28,7 +28,7 @@
 
 # API Reference
 
-Base url: TODO
+Base url: `http://64.23.146.45:8080`
 
 ---
 ## Health

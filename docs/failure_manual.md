@@ -17,6 +17,14 @@ This file documents how the system behaves under failure, how to reproduce issue
 
 ---
 
+## 📖 Runbooks
+
+For step-by-step emergency guides, see:
+- [Service Down Runbook](runbooks/service-down.md) — fired by Better Stack when `/health` is unreachable
+- [High Error Rate Runbook](runbooks/high-error-rate.md) — fired by Better Stack when error logs exceed threshold
+
+---
+
 ## 🚑 First Response Checklist
 
 Something is wrong. Start here before diving into individual failure modes.
