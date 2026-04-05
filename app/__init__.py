@@ -52,6 +52,7 @@ def create_app():
 
     @app.errorhandler(500)
     def internal_error(e):
+        app.logger.error("Internal server error: %s", e)
         return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/health")

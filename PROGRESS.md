@@ -210,9 +210,52 @@ External Logs (BetterStack):
 
 | Objective | Status | Notes |
 |-----------|--------|-------|
-| Configure alerts for "Service Down" and "High Error Rate" | ⬜ Todo | |
-| Connect alerts to a channel (Slack, Discord, Email) | ⬜ Todo | |
-| Alert must fire within 5 minutes of failure | ⬜ Todo | |
+| Configure alerts for "Service Down" and "High Error Rate" | ✅ Done | Uptime monitor + log alert in Better Stack (see config below) |
+| Connect alerts to a channel (Slack, Discord, Email) | ✅ Done | E-mail alerts configured for the team |
+| Alert must fire within 5 minutes of failure | ✅ Done | Service Down: ~3 min, High Error Rate: ~1-2 min |
+
+#### Verification
+
+Service Down Monitor:
+![Service Down Monitor](/report-images/ServiceDown1.png)
+![Service Down Alert](/report-images/ServiceDown2.png)
+
+High Error Rate Alert:
+![High Error Rate Alert](/report-images/HighError1.png)
+![High Error Rate Config](/report-images/HighError2.png)
+
+#### Alert Configuration
+
+**Service Down** — Better Stack Uptime Monitor:
+```yaml
+monitor:
+  name: Service Down
+  url: http://64.23.146.45:8080/health
+  alert_when: url_becomes_unavailable
+  check_frequency: 3 minutes
+  confirmation_period: immediate
+  recovery_period: 3 minutes
+  notification:
+    channel: email
+    team: Current team
+```
+
+**High Error Rate** — Better Stack Log Alert:
+```yaml
+alert:
+  name: High Error Rate
+  source: five_nines_prod
+  query: "log.level:WARNING OR log.level:ERROR"
+  detection_method: threshold
+  condition: count > 10
+  run_every: 1 minute
+  on_data_from: last 1 minute
+  confirmation_period: immediately
+  recovery_period: 2 minutes
+  notification:
+    channel: email
+    team: Current team
+```
 
 ### 🥇 Tier 3: Gold
 

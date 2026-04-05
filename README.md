@@ -1,5 +1,8 @@
 # MLH PE Hackathon — URL Shortener API
 
+[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/2j3wi.svg)](https://uptime.betterstack.com/?utm_source=status_badge). 
+
+
 A URL shortener REST API built with Flask, Peewee ORM, and PostgreSQL.
 
 **Stack:** Flask · Gunicorn · Peewee ORM · PostgreSQL · Redis · Nginx · Fluent Bit · uv
