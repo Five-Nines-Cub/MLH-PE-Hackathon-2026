@@ -1,6 +1,6 @@
 import os
 
-from flask import current_app
+
 from playhouse.pool import PooledPostgresqlDatabase
 from peewee import DatabaseProxy, Model
 import redis
@@ -51,11 +51,9 @@ def init_db(app):
     def _db_connect():
         if not os.environ.get("SKIP_DB_INIT"):
             db.connect(reuse_if_open=True)
-            current_app.logger.info("Database connected")
 
     @app.teardown_appcontext
     def _db_close(exc):
         if not os.environ.get("SKIP_DB_INIT") and not db.is_closed():
             db.close()
-            current_app.logger.info("Database closed")
 

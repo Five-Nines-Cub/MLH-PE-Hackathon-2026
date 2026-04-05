@@ -83,6 +83,20 @@ services:
     ports:
       - "6379:6379"
 
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    environment:
+      BETTERSTACK_TOKEN: ${BETTERSTACK_TOKEN}
+      BETTERSTACK_HOST: ${BETTERSTACK_HOST}
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./parsers.conf:/fluent-bit/etc/parsers.conf:ro
+    restart: on-failure
+    depends_on:
+      - web
+
 volumes:
   pgdata:
   pgdata_test:

@@ -25,6 +25,7 @@ def create_app():
     app.logger.handlers = []
     app.logger.addHandler(handler)
     app.logger.setLevel(logging.INFO)
+    app.logger.propagate = False
 
     #initalize database
     init_db(app)
@@ -51,6 +52,7 @@ def create_app():
 
     @app.errorhandler(500)
     def internal_error(e):
+        app.logger.error("Internal server error: %s", e)
         return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/health")

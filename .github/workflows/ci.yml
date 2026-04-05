@@ -69,6 +69,8 @@ jobs:
               echo "DATABASE_PORT=5432"
               echo "DATABASE_USER=${{ secrets.DATABASE_USER }}"
               echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}"
+              echo "BETTERSTACK_TOKEN=${{ secrets.BETTERSTACK_TOKEN }}"
+              echo "BETTERSTACK_HOST=${{ secrets.BETTERSTACK_HOST }}"
             } > .env
 
             docker compose up db redis -d
@@ -77,3 +79,4 @@ jobs:
             sleep 10
             docker compose stop nginx
             docker compose up nginx -d
+            docker compose up fluent-bit -d

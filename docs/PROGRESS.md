@@ -11,10 +11,10 @@
 
 #### Verification  
 Screenshot of `GET /health` returning 200:  
-![Health End Point](docs/report-images/Health_endpoint.png)  
+![Health End Point](report-images/Health_endpoint.png)  
 
 Screenshot of Github Action CI with passing tests:  
-![Github CI](/report-images/GithubCI.png)  
+![Github CI](report-images/GithubCI.png)  
 
 ### 🥈 Tier 2: Silver
 
@@ -27,12 +27,12 @@ Screenshot of Github Action CI with passing tests:
 
 #### Verification  
 Screenshot of 50% Coverage:  
-![Code Coverage](/report-images/code_coverage.png) 
+![Code Coverage](report-images/code_coverage.png) 
 
 Screenshots of deploy workflow dependency and failed test commits:  
-![The Gatekeeper Workflow](/report-images/gatekeeper1.png)  
-![Failed Test Run](/report-images/gatekeeper2.png). 
-![Failed Commit](/report-images/gatekeeper3.png). 
+![The Gatekeeper Workflow](report-images/gatekeeper1.png)  
+![Failed Test Run](report-images/gatekeeper2.png). 
+![Failed Commit](report-images/gatekeeper3.png). 
 
 ### 🥇 Tier 3: Gold
 
@@ -40,12 +40,12 @@ Screenshots of deploy workflow dependency and failed test commits:
 |-----------|--------|-------|
 | 70% Coverage: Use pytest-cov | ✅ Done | See image below |
 | Graceful failure | ✅ Done | Live demo against prod (See below) |
-| Restarts automatically when app process or container is killed | ⬜ Todo | |
-| Create failure manual and document exactly what happens when things break | In Progress | [Failure Manual](./failure_manual.md) |
+| Restarts automatically when app process or container is killed | ✅ Done | `restart: on-failure` in docker-compose.yml — demo TODO |
+| Create failure manual and document exactly what happens when things break | ✅ Done | [Failure Manual](./failure_manual.md) |
 
 #### Verification  
 Screenshot of 70% Coverage:  
-![Code Coverage](/report-images/code_coverage.png)  
+![Code Coverage](report-images/code_coverage.png)  
 
 #### Graceful Failure — Live Demo
 
@@ -84,7 +84,7 @@ https://github.com/user-attachments/assets/9ea2292a-210b-4ac5-ab4c-8919ee41c6fe
 
 #### Verification  
 Screenshot of terminal output showing 50 concurrent users:  
-![50 concurrent users](/report-images/50_concurrent_test.png)
+![50 concurrent users](report-images/50_concurrent_test.png)
 
 Documented baseline p95 response time:  
 ```
@@ -108,10 +108,10 @@ Documented baseline p95 response time:
 
 #### Verification  
 Screenshot of terminal output showing 200 concurrent users:  
-![200 Concurrent Users](/report-images/200_concurrent_test.png)
+![200 Concurrent Users](report-images/200_concurrent_test.png)
 
 Screenshot of terminal output showing 2 docker containers and nginx container:  
-![Docker and Nginx Containers](/report-images/docker_nginx_container.png)
+![Docker and Nginx Containers](report-images/docker_nginx_container.png)
 
 ### 🥇 Tier 3: Gold
 
@@ -124,12 +124,12 @@ Screenshot of terminal output showing 2 docker containers and nginx container:
 
 #### Verification  
 Evidence of caching:  
-![Evidence Of Caching](/report-images/caching.png)   
+![Evidence Of Caching](report-images/caching.png)   
 
-![Cache Hit Count](/report-images/CacheHitCount.png)   
+![Cache Hit Count](report-images/CacheHitCount.png)   
 
 Screenshot of terminal output showing 500+ concurrent users:  
-![500 concurrent users](/report-images/500_concurrent_load_balanced.png)
+![500 concurrent users](report-images/500_concurrent_load_balanced.png)
 
 Error Rate from above screenshot:
 ```
@@ -179,12 +179,88 @@ I ran `docker stats` to identify which parts of the system were under the most s
 
 The web servers are also under significant load, though the database remains the primary bottleneck.
 
-![Docker Stats](/report-images/bottleneck.png)
+![Docker Stats](report-images/bottleneck.png)
 
 The image below shows Nginx routing all traffic to a single container (` mlh-pe-hackathon-2026-web-1`) due to incorrect load balancing configuration — Nginx cached the DNS resolution at startup and never re-resolved it, effectively ignoring the second replica entirely.
 
-![Nginx Load Balancing Misconfiguration](/report-images/bottleneck2.png)
-
+![Nginx Load Balancing Misconfiguration](report-images/bottleneck2.png)
 
 ---
 
+## Observability
+### 🥉 Tier 1: Bronze
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Configure JSON logs | ✅ Done | See image below |
+| Expose a /metrics endpoint showing CPU/RAM usage | ✅ Done | See image below |
+| Have a way to view logs without SSH-ing into the server. | ✅ Done | Fluent Bit ships logs to Better Stack — viewable at betterstack.com |
+
+#### Verification  
+JSON logs:  
+![JSON logs](report-images/json_logs.png)
+
+Metrics endpoint:  
+![Metrics endpoint](report-images/metrics.png). 
+
+External Logs (BetterStack):
+![Betterstack logs](report-images/BetterStackLogs.png). 
+
+### 🥈 Tier 2: Silver
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Configure alerts for "Service Down" and "High Error Rate" | ✅ Done | Uptime monitor + log alert in Better Stack (see config below) |
+| Connect alerts to a channel (Slack, Discord, Email) | ✅ Done | E-mail alerts configured for the team |
+| Alert must fire within 5 minutes of failure | ✅ Done | Service Down: ~3 min, High Error Rate: ~1-2 min |
+
+#### Verification
+
+Service Down Monitor:
+![Service Down Monitor](report-images/ServiceDown1.png)
+![Service Down Alert](report-images/ServiceDown2.png)
+
+High Error Rate Alert:
+![High Error Rate Alert](report-images/HighError1.png)
+![High Error Rate Config](report-images/HighError2.png)
+
+#### Alert Configuration
+
+**Service Down** — Better Stack Uptime Monitor:
+```yaml
+monitor:
+  name: Service Down
+  url: http://64.23.146.45:8080/health
+  alert_when: url_becomes_unavailable
+  check_frequency: 3 minutes
+  confirmation_period: immediate
+  recovery_period: 3 minutes
+  notification:
+    channel: email
+    team: Current team
+```
+
+**High Error Rate** — Better Stack Log Alert:
+```yaml
+alert:
+  name: High Error Rate
+  source: five_nines_prod
+  query: "log.level:WARNING OR log.level:ERROR"
+  detection_method: threshold
+  condition: count > 10
+  run_every: 1 minute
+  on_data_from: last 1 minute
+  confirmation_period: immediately
+  recovery_period: 2 minutes
+  notification:
+    channel: email
+    team: Current team
+```
+
+### 🥇 Tier 3: Gold
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Build a visual dashboard tracking 4+ metrics (Latency, Traffic, Errors, Saturation) | ⬜ Todo | |
+| Write a runbook — "In Case of Emergency" guide | ⬜ Todo | |
+| Diagnose a fake issue using only the dashboard and logs | ⬜ Todo | |

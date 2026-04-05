@@ -1,8 +1,11 @@
 # MLH PE Hackathon — URL Shortener API
 
+[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/2j3wi.svg)](https://uptime.betterstack.com/?utm_source=status_badge). 
+
+
 A URL shortener REST API built with Flask, Peewee ORM, and PostgreSQL.
 
-**Stack:** Flask · Peewee ORM · PostgreSQL · uv
+**Stack:** Flask · Gunicorn · Peewee ORM · PostgreSQL · Redis · Nginx · Fluent Bit · uv
 
 ---
 ## Starting The Docker Container
@@ -56,11 +59,16 @@ docker exec hackathon-db psql -U postgres -d hackathon_db -c "SELECT setval(pg_g
 
 ## Running Specific Services
 
-The `docker-compose.yml` defines five services: `db`, `web`, `nginx`, `db_test`, and `k6`. You rarely need all of them at once.
+The `docker-compose.yml` defines the following services: `db`, `web`, `nginx`, `redis`, `fluent-bit`, `db_test`, and `k6`. You rarely need all of them at once.
 
-**App only (db + web + nginx) — typical dev workflow:**
+**App only (db + redis + web + nginx) — typical dev workflow:**
 ```bash
-docker compose up db web nginx --build
+docker compose up db redis web nginx --build
+```
+
+**With log shipping to Better Stack:**
+```bash
+docker compose up db redis web nginx fluent-bit --build
 ```
 
 **App DB only — if you just need Postgres for local development:**
@@ -113,7 +121,7 @@ These tests test the api endpoints of our program. It requires the test database
 uv sync --group dev
 
 # 2. Start up the test docker container
-docker compose up db_test -d
+docker compose up db_test redis -d
 
 # 3. Run system tests
 uv run pytest -m system
@@ -156,45 +164,119 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 │   ├── cache.py           # wrapper for redis cache calls
 │   ├── logging.py         # configures the logger
 │   ├── models/
+│   │   ├── __init__.py
 │   │   ├── user.py
 │   │   ├── url.py
 │   │   └── event.py
 │   └── routes/
+│       ├── __init__.py
 │       ├── users.py
 │       ├── urls.py
 │       ├── events.py
 │       └── metrics.py
 ├── tests/
+│   ├── __init__.py
 │   ├── conftest.py        # system test fixtures (test DB setup)
 │   ├── test_unit.py       # pure unit tests (no DB)
 │   ├── test_health.py
 │   ├── test_users.py
 │   ├── test_urls.py
 │   ├── test_metrics.py
+│   ├── test_cache.py
 │   ├── test_database_init.py
 │   ├── test_models_event.py
 │   ├── test_redirect.py
 │   └── test_events.py
+├── seed/
+│   ├── init.sql           # auto-runs on first DB startup
+│   ├── users.csv
+│   ├── urls.csv
+│   └── events.csv
+├── docs/
+│   ├── PROGRESS.md        # hackathon quest progress tracker
+│   ├── architecture.md    # Bronze: architecture diagram (boxes + arrows)
+│   ├── deploy.md          # deployment and rollback guide
+│   ├── api.md             # API Guide
+│   ├── failure_manual.md  # failure modes, recovery steps, and debugging guide
+│   ├── troubleshooting.md # Silver: bugs you hit today + fixes
+│   ├── config.md          # Silver: all environment variables listed
+│   ├── decisions.md       # Gold: why Redis, why Nginx, why Peewee, etc.
+│   ├── capacity.md        # Gold: load test results, estimated user limits
+│   ├── report-images/     # screenshots and videos for PROGRESS.md
+│   └── runbooks/
+│       ├── service-down.md    # Gold: what to do when health check fails
+│       └── high-error-rate.md # Gold: what to do when error rate spikes
+├── k6_out/
+│   └── results.json       # load test output
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
 ├── Dockerfile
+├── run.py
 ├── load_test_k6.js
 ├── pyproject.toml
 ├── nginx.conf
-├── .env.example
-├── docs/
-│   ├── architecture.md        # Bronze: architecture diagram (boxes + arrows)
-│   ├── deploy.md              # deployment and rollback guide
-│   ├── api.md                 # API Guide
-│   ├── failure-manual.md      
-│   ├── troubleshooting.md     # Silver: bugs you hit today + fixes
-│   ├── config.md              # Silver: all environment variables listed
-│   ├── runbooks/
-│   │   ├── service-down.md    # Gold: what to do when health check fails
-│   │   └── high-error-rate.md # Gold: what to do when error rate spikes
-│   ├── decisions.md           # Gold: why Redis, why Nginx, why Peewee, etc.
-│   └── capacity.md            # Gold: load test results, estimated user limits
+├── fluent-bit.conf        # Fluent Bit log shipper config (ships to Better Stack)
+├── parsers.conf           # Fluent Bit JSON parser (unwraps app JSON logs)
+└── .env.example
 ```
+
+## Logging & Observability
+
+The app emits structured JSON logs on every request via a custom `JSONFormatter` (`app/logging.py`):
+
+```json
+{"timestamp": "2026-04-05T11:27:45.119721", "level": "INFO", "message": "Created user id=1 username=alice", "module": "users"}
+```
+
+Log levels used:
+- `INFO` — successful operations (user created, URL created, cache hits)
+- `WARNING` — client errors (validation failures, 404s, 409 conflicts)
+
+**View logs locally:**
+```bash
+docker compose logs -f web
+```
+
+**View logs without SSH (production):**
+Logs are shipped to [Better Stack](https://betterstack.com) via Fluent Bit. Requires `BETTERSTACK_TOKEN` and `BETTERSTACK_HOST` set as environment variables (or GitHub secrets for CI).
+
+**Metrics endpoint:**
+```bash
+curl http://localhost:8080/metrics/
+# {"cpu_percent": 0.3, "ram_percent": 19.1, "ram_total": ..., "ram_used": ...}
+```
+
+---
+
+## Error Handling
+
+All errors are returned as JSON — never HTML.
+
+### 404 — Not Found
+
+Two layers handle 404s:
+
+1. **Route-level** — each handler catches Peewee's `DoesNotExist` and returns a specific message.
+2. **Global fallback** — `@app.errorhandler(404)` catches any unmatched route and returns `{"error": "Not found"}`.
+
+| Endpoint | Trigger |
+|----------|---------|
+| `GET /users/<id>` | User ID not in DB |
+| `PUT /users/<id>` | User ID not in DB |
+| `GET /urls/<id>` | URL ID not in DB |
+| `PUT /urls/<id>` | URL ID not in DB |
+| `POST /urls` | `user_id` references a non-existent user |
+| `POST /events` | `url_id` or `user_id` references a non-existent record |
+| `GET /<short_code>` | Short code not found or URL is inactive |
+| Any unknown route | No matching Flask route |
+
+### 500 — Internal Server Error
+
+Two layers handle 500s:
+
+1. **Route-level** — `POST /urls` explicitly returns 500 if short code generation fails after 10 collision attempts.
+2. **Global fallback** — `@app.errorhandler(500)` catches any unhandled exception and returns `{"error": "Internal server error"}`.
+
 ---
 
 ## Prerequisites
