@@ -71,4 +71,4 @@ jobs:
               echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}"
             } > .env
 
-            docker compose up db web nginx --build -d
+            docker compose up db redis web nginx --build -d
