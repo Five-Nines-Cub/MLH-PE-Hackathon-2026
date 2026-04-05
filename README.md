@@ -157,8 +157,11 @@ Before running the load tests, ensure that the docker instance is running. Follo
 # Run the load tests using k6. default concurrent users = 50
 docker compose run --rm k6 run --summary-export=/out/results.json /load_test_k6.js
 
-# Run the load tests with a specified number of concurrent users . Replace <ConcurrentUsers> with an int
+# Run the load tests with a specified number of concurrent users. Replace <ConcurrentUsers> with an int
 docker compose run --rm -e VUS=<ConcurrentUsers> k6 run --summary-export=/out/results.json /load_test_k6.js
+
+# Run the ramping load test (ramps to 1500 VUs to find breaking point)
+docker run --rm -v $(pwd):/scripts grafana/k6 run /scripts/load_test_ramp.js
 ```
 
 Tests run against a real PostgreSQL instance using the same `DATABASE_*` env vars. CI runs automatically on every push via GitHub Actions.
@@ -222,7 +225,8 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── docker-compose.yml
 ├── Dockerfile
 ├── run.py
-├── load_test_k6.js
+├── load_test_k6.js        # steady-state load test (configurable VUs)
+├── load_test_ramp.js      # ramping load test (0 → 1500 VUs, finds breaking point)
 ├── pyproject.toml
 ├── nginx.conf
 ├── fluent-bit.conf        # Fluent Bit log shipper config (ships to Better Stack)

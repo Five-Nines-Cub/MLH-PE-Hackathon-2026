@@ -269,3 +269,31 @@ alert:
 
 Grafana Dashboard:
 ![Grafana Dashboard](report-images/Grafana.png)
+
+---
+
+## Documentation Bonus Quest
+
+### 🥉 Bronze: The Map
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| README: Setup instructions | ✅ Done | Full setup, seeding, running, testing instructions |
+| Architecture Diagram | ✅ Done | [architecture.md](architecture.md) — Mermaid diagram with all components |
+| API Docs | ✅ Done | [api.md](api.md) — all endpoints documented with request/response/curl examples |
+
+### 🥈 Silver: The Manual
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Deploy Guide | ✅ Done | [deploy.md](deploy.md) — DigitalOcean setup, CI deploy, manual deploy, rollback |
+| Troubleshooting | ✅ Done | [troubleshooting.md](troubleshooting.md) — known issues and fixes |
+| Config | ✅ Done | [config.md](config.md) — all environment variables documented |
+
+### 🥇 Gold: The Codex
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Runbooks | ✅ Done | [service-down.md](runbooks/service-down.md), [high-error-rate.md](runbooks/high-error-rate.md) |
+| Decision Log | ✅ Done | [decisions.md](decisions.md) — Redis, Nginx, Gunicorn, uv, Fluent Bit, Better Stack, Prometheus/Grafana |
+| Capacity Plan | ✅ Done | [capacity.md](capacity.md) — load test results, bottleneck analysis, scaling recommendations |

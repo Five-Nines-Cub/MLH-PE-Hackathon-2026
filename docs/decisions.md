@@ -27,7 +27,7 @@ Nginx handles load balancing across multiple web replicas, manages keepalive con
 ---
 
 ## 3. Gunicorn over Flask's Built-in Server
-@Sanjeev PLS CHECK THIS TY
+
 **Decision:** Use Gunicorn as the WSGI server in production.
 
 **Options considered:**
@@ -67,25 +67,43 @@ Running multiple replicas improves availability and throughput. If one replica c
 
 ---
 
-## 5. Fluent Bit as log shipper
+## 6. Fluent Bit as Log Shipper
 
-**Decision:** Use Fluent Bit Log Shipper instead of _______.
+**Decision:** Use Fluent Bit to ship container logs to Better Stack.
 
 **Options considered:**
-- Use Fluent Bit Log Shipper
-- ...
+- Fluent Bit
+- Logstash
+- Direct HTTP from the app
 
 **Reasoning:**
+Fluent Bit is lightweight (~450KB binary) compared to Logstash which runs on the JVM and would add significant memory overhead on a small Droplet. It runs as a sidecar container, reads Docker container logs directly from the host filesystem, and forwards them to Better Stack without any changes to the application code. Shipping logs directly from the app via HTTP would couple the app to the logging infrastructure and add latency to every request.
 
 ---
 
-## 5. Better Stack as log aggregator 
+## 7. Better Stack as Log Aggregator and Uptime Monitor
 
-**Decision:** Better Stack instead of _______.
+**Decision:** Use Better Stack for log aggregation, uptime monitoring, and alerting.
 
 **Options considered:**
-- Use Better Stack Log Aggregator
-- ...
+- Better Stack
+- Grafana Loki + Grafana Alerting
+- Datadog
 
 **Reasoning:**
+Better Stack combines log ingestion, uptime monitoring, and alert management in a single platform with a generous free tier. Datadog is more powerful but expensive. Grafana Loki would require running another container on the Droplet alongside Prometheus and Grafana, adding resource pressure. Better Stack's uptime monitor also gives us external health checking — something Grafana alone cannot provide since it runs inside the same Droplet as the app.
+
+---
+
+## 8. Prometheus + Grafana for Metrics Dashboard
+
+**Decision:** Use Prometheus to scrape metrics and Grafana to visualize them.
+
+**Options considered:**
+- Prometheus + Grafana
+- Better Stack metrics
+- Datadog APM
+
+**Reasoning:**
+Prometheus + Grafana is the industry standard open-source metrics stack and integrates directly with `prometheus-flask-exporter` for zero-config HTTP instrumentation. Both run as Docker containers alongside the app with no external dependencies or cost. Better Stack metrics and Datadog APM would add cost and external dependencies. Grafana dashboards are provisioned as code (JSON + YAML), making them reproducible across environments.
 

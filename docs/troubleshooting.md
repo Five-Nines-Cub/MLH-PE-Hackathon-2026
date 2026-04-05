@@ -1,32 +1,33 @@
 ## Known Issues & Fixes
-TODO: Sanjeev add ur own stuff
 
 ---  
 
 Issue/Error: Metrics endpoint returns 500 / "psutil not available"  
 File: app/routes/metrics.py  
-Line: route handler (lines ~9-21)  
-Solution: Install `psutil` (add to `pyproject.toml` and `pip install` / rebuild image) or modify the handler to degrade gracefully (catch ImportError and return placeholder metrics).  
+Status: ✅ Fixed — `psutil>=5.9` added to `pyproject.toml`
 
 ---
 
 Issue/Error: `/metrics` not reachable (blueprint not registered)
 File: app/routes/__init__.py
-Line: blueprint registration block
-Solution: Import and register `metrics_bp` in `app/routes/__init__.py` (optionally guard the import if the module may be missing).
+Status: ✅ Fixed — `metrics_bp` imported and registered in `app/routes/__init__.py`
 
 ---
 
-Issue/Error message: Coverage gaps reported (app startup branches untested)
+Issue/Error: Coverage gaps reported (app startup branches untested)
 File: app/__init__.py
-Line: 40-41, 50, 54, 58, 72 (per coverage report)
-Solution: Add unit tests exercising app startup, error handlers, and redirect flow; or refactor to make behavior testable.
+Status: ✅ Fixed — 97 tests now cover startup, error handlers, and redirect flow
 
 ---
 
-Issue/Error message: Untested except branch in events POST (user lookup missing)
+Issue/Error: Untested except branch in events POST (user lookup missing)
 File: app/routes/events.py
-Line: 59-60 (except `User.DoesNotExist` branch)
-Solution: In tests POST `/events` include `user_id` and `monkeypatch.setattr(User, "get_by_id", staticmethod(lambda *_: (_ for _ in ()).throw(User.DoesNotExist())))` or use `monkeypatch`/`unittest.mock.patch` to raise `User.DoesNotExist`, then assert 404 response.
+Status: ✅ Fixed — `test_create_event_user_not_found_exception` covers the `User.DoesNotExist` branch
+
+---
+
+Issue/Error: Grafana Error Rate panel shows 0% during high-VU load test even though k6 reports errors
+File: grafana/dashboards/app.json
+Status: ℹ️ Expected behavior — the error rate panel queries `flask_http_request_total`, which only records requests that reached Flask. At very high VU counts (~1150+), Nginx drops connections before they reach the app (EOF / connection reset). These failures are invisible to Flask metrics. Use k6 output or Nginx access logs to observe infrastructure-layer errors.
 
 ---
