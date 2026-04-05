@@ -11,6 +11,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "redis>=4.6",
     "psutil>=5.9",
+    "prometheus-flask-exporter>=0.23",
 ]
 
 [dependency-groups]

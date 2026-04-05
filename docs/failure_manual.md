@@ -10,6 +10,9 @@ This file documents how the system behaves under failure, how to reproduce issue
 * **nginx** – Load balancer
 * **db** – PostgreSQL database
 * **redis** – Cache layer
+* **fluent-bit** – Log shipper (ships to Better Stack)
+* **prometheus** – Metrics scraper (scrapes both web containers every 15s)
+* **grafana** – Dashboard (port 3000)
 * **k6** – Load testing tool
 
 ---
@@ -62,7 +65,8 @@ Once you've identified which component is failing, jump to the relevant section 
 | All responses slow, no errors | §3 DB Connection Pool, §6 High Load, §7 Cold Cache |
 | Empty API responses | §8 Missing Seed Data |
 | Build fails in CI | §11 uv Lockfile, §12 uv Version |
-| Logs not appearing in Better Stack | §17 Fluent Bit Failure |
+| Logs not appearing in Better Stack | §18 Fluent Bit Failure |
+| Dashboard shows "No data" | §16 Grafana / Prometheus Down |
 
 ---
 
@@ -507,7 +511,38 @@ lsof -i :6379
 
 ---
 
-### 16. DigitalOcean Droplet Unreachable
+### 16. Grafana / Prometheus Down (Dashboard Unavailable)
+
+**Trigger**
+```bash
+docker stop mlh-pe-hackathon-2026-grafana-1
+docker stop mlh-pe-hackathon-2026-prometheus-1
+```
+
+**Behavior**
+* `http://<host>:3000` is unreachable — dashboard is unavailable
+* The app itself is unaffected — Prometheus and Grafana are read-only observers
+* If only Prometheus is down, Grafana shows "No data" but continues loading
+
+**Impact**
+* No user-facing outage — purely an observability gap
+
+**Recovery**
+```bash
+docker compose up prometheus grafana -d
+```
+
+Grafana's volume (`grafana_data`) persists the dashboard and datasource config — no re-provisioning needed.
+
+**Known issue — Grafana password on volume reset:** `GF_SECURITY_ADMIN_PASSWORD` only takes effect on first startup. If the `grafana_data` volume is wiped and restarted, the password resets to whatever `GRAFANA_PASSWORD` is set to in `.env`. If the secret is missing, it defaults to `admin`.
+
+**Mitigation**
+* Both services use `restart: on-failure` — Docker will restart them automatically after a crash
+* Dashboard and datasource are provisioned from files (`grafana/provisioning/`) — recreating the volume restores everything automatically
+
+---
+
+### 17. DigitalOcean Droplet Unreachable
 
 **Trigger**
 * Droplet is powered off, rebooted, or unresponsive (OOM kill, kernel panic, etc.)
@@ -546,7 +581,7 @@ docker compose up db redis web nginx fluent-bit -d --scale web=2
 
 ---
 
-### 17. Fluent Bit Failure (Log Shipping Down)
+### 18. Fluent Bit Failure (Log Shipping Down)
 
 **Trigger**
 

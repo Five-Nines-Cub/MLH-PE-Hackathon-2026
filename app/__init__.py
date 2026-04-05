@@ -2,10 +2,18 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect
+from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Gauge
+import psutil
 
 from app.database import init_db
 from app.routes import register_routes
 from app.cache import _cache_get, _cache_set
+
+# Module-level singletons — registered once per process, safe across test reruns
+_prom = PrometheusMetrics.for_app_factory(path='/prom/metrics', group_by='endpoint')
+cpu_gauge = Gauge('app_cpu_percent', 'CPU usage percent')
+ram_gauge = Gauge('app_ram_percent', 'RAM usage percent')
 
 
 def create_app():
@@ -41,6 +49,16 @@ def create_app():
         with db.connection_context():
             db.create_tables([User, Url, Event], safe=True)
 
+
+    _prom.init_app(app)
+
+    @app.before_request
+    def update_system_metrics():
+        try:
+            cpu_gauge.set(psutil.cpu_percent())
+            ram_gauge.set(psutil.virtual_memory().percent)
+        except Exception:
+            pass
 
     register_routes(app)
     app.logger.info("Registered routes")

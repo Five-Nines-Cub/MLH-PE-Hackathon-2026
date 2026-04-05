@@ -44,6 +44,7 @@ docker compose up nginx -d
 
 # Start log shipper
 docker compose up fluent-bit -d
+docker compose up prometheus grafana -d
 ```
 
 > **Why nginx is restarted on every deploy:** Nginx caches Docker DNS at startup. Without a restart, it routes all traffic to the original container IP and ignores new replicas. The restart forces it to re-resolve and pick up all `web` containers.
@@ -65,6 +66,7 @@ These must be set in the repository under **Settings â†’ Secrets and variables â
 | `DATABASE_PASSWORD` | PostgreSQL password |
 | `BETTERSTACK_TOKEN` | Better Stack source token for log shipping |
 | `BETTERSTACK_HOST` | Better Stack ingestion host |
+| `GRAFANA_PASSWORD` | Grafana admin password (only applied on first startup) |
 
 ---
 
