@@ -29,6 +29,18 @@ Screenshot of Github Action CI with passing tests:
 Screenshot of 50% Coverage:  
 ![Code Coverage](/report-images/code_coverage.png)  
 
+### 🥇 Tier 3: Gold
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| 70% Coverage: Use pytest-cov | ✅ Done | See image below |
+| Graceful failure | TODO |  |
+| Restarts automatically when app process or container is killed | ⬜ Todo | |
+| Create failure manual and document exactly what happens when things break | In Progress | [Failure Manual](./failure_manual.md) |
+
+#### Verification  
+Screenshot of 70% Coverage:  
+![Code Coverage](/report-images/code_coverage.png)  
 ---
 
 ## Scalability

@@ -1,7 +1,7 @@
 import pytest
 
 pytestmark = pytest.mark.system
-
+from app.models import User
 
 @pytest.fixture
 def user(client):
@@ -63,6 +63,13 @@ def test_create_event_user_not_found(client, url):
     res = client.post("/events", json={"url_id": url["id"], "user_id": 999, "event_type": "click"})
     assert res.status_code == 404
 
+def test_create_event_user_not_found_exception(client, url, monkeypatch):
+    def raise_not_found(*_):
+        raise User.DoesNotExist()
+
+    monkeypatch.setattr("app.models.user.User.get_by_id", raise_not_found)
+    res = client.post("/events", json={"url_id": url["id"], "user_id": 999, "event_type": "click"})
+    assert res.status_code == 404
 
 def test_create_event_without_user(client, url):
     res = client.post("/events", json={"url_id": url["id"], "event_type": "view"})
