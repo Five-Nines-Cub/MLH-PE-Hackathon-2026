@@ -1,3 +1,5 @@
+import os
+
 from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect
 
@@ -20,8 +22,9 @@ def create_app():
     from app.models.url import Url
     from app.models.event import Event
 
-    with db.connection_context():
-        db.create_tables([User, Url, Event], safe=True)
+    if not os.environ.get("SKIP_DB_INIT"):
+        with db.connection_context():
+            db.create_tables([User, Url, Event], safe=True)
 
     register_routes(app)
 

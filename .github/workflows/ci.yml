@@ -43,3 +43,30 @@ jobs:
 
       - name: Run tests
         run: uv run pytest -v
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy to DigitalOcean
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: root
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            cd MLH-PE-Hackathon-2026
+            git pull origin main
+
+            {
+              echo "FLASK_DEBUG=${{ secrets.FLASK_DEBUG }}"
+              echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}"
+              echo "DATABASE_HOST=${{ secrets.DATABASE_HOST }}"
+              echo "DATABASE_PORT=5432"
+              echo "DATABASE_USER=${{ secrets.DATABASE_USER }}"
+              echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}"
+            } > .env
+
+            docker compose up db web nginx --build -d
