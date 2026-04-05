@@ -1,7 +1,8 @@
 import os
 
-from peewee import DatabaseProxy, Model, PostgresqlDatabase
 from flask import current_app
+from playhouse.pool import PooledPostgresqlDatabase
+from peewee import DatabaseProxy, Model
 import redis
 import json
 
@@ -16,12 +17,14 @@ class BaseModel(Model):
 
 
 def init_db(app):
-    database = PostgresqlDatabase(
+    database = PooledPostgresqlDatabase(
         os.environ.get("DATABASE_NAME", "hackathon_db"),
         host=os.environ.get("DATABASE_HOST", "localhost"),
         port=int(os.environ.get("DATABASE_PORT", 5432)),
         user=os.environ.get("DATABASE_USER", "postgres"),
         password=os.environ.get("DATABASE_PASSWORD", "postgres"),
+        max_connections=32,
+        stale_timeout=300,
     )
     db.initialize(database)
 
