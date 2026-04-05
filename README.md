@@ -170,7 +170,9 @@ uv run pytest -m unit --cov
 uv run pytest tests/test_unit.py
 
 # Run a single test by name
-uv run pytest -m unit -k "test_name"
+uv run pytest tests/<Test File>.py::<Test Name>
+# Example:
+uv run pytest tests/test_urls.py::test_create_url_valid
 ```
 
 ### System Tests

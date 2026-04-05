@@ -5,7 +5,7 @@
 
 | Objective | Status | Notes |
 |-----------|--------|-------|
-| Write unit tests with pytest | ✅ Done | 84 unit + system tests across health, users, urls, events |
+| Write unit tests with pytest | ✅ Done | 97 unit + system tests across health, users, urls, events |
 | Set up GitHub Actions CI | ✅ Done | `.github/workflows/ci.yml` — runs on every push/PR |
 | `GET /health` endpoint returns 200 | ✅ Done | `http://localhost:8080/health` |
 
@@ -22,17 +22,54 @@ Screenshot of Github Action CI with passing tests:
 |-----------|--------|-------|
 | 50% Coverage: Use pytest-cov | ✅ Done | `pytest-cov` added to dev dependencies |
 | Integration Testing: Write tests that hit the API | ✅ Done | System tests use Flask `test_client()` against a real DB |
-| The Gatekeeper: CI fails if tests fail | ✅ Done | |
+| The Gatekeeper: CI fails if tests fail | ✅ Done | See below |
 | Error Handling: Document how app handles 404s and 500s | ✅ Done | [See README](README.md#error-handling) |
 
 #### Verification  
 Screenshot of 50% Coverage:  
-![Code Coverage](/report-images/code_coverage.png)  
+![Code Coverage](/report-images/code_coverage.png) 
 
 Screenshots of deploy workflow dependency and failed test commits:  
 ![The Gatekeeper Workflow](/report-images/gatekeeper1.png)  
 ![Failed Test Run](/report-images/gatekeeper2.png). 
-![Failed Commit](/report-images/gatekeeper3.png).  
+![Failed Commit](/report-images/gatekeeper3.png). 
+
+### 🥇 Tier 3: Gold
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| 70% Coverage: Use pytest-cov | ✅ Done | See image below |
+| Graceful failure | ✅ Done | Live demo against prod (See below) |
+| Restarts automatically when app process or container is killed | ⬜ Todo | |
+| Create failure manual and document exactly what happens when things break | In Progress | [Failure Manual](./failure_manual.md) |
+
+#### Verification  
+Screenshot of 70% Coverage:  
+![Code Coverage](/report-images/code_coverage.png)  
+
+#### Graceful Failure — Live Demo
+
+A script was run against the production server (`http://64.23.146.45:8080`) sending 9 bad inputs. Every case returned a clean JSON `{"error": "..."}` response with an appropriate 4xx status code — no crashes, no HTML stack traces.
+
+**Tests run:**
+
+| # | Input | Expected Status | What it verifies |
+|---|-------|-----------------|------------------|
+| 1 | `POST /urls/` with empty `{}` body | 422 | Missing required fields returns validation error |
+| 2 | `POST /urls/` with `"this is not json"` body | 422 | Malformed / non-JSON body does not crash the app |
+| 3 | `POST /urls/` with `user_id: 99999` (non-existent) | 404 | Reference to missing resource returns 404 JSON |
+| 4 | `POST /users/` with `username: 123` (number) | 422 | Wrong field type returns validation error |
+| 5 | `POST /users/` with no `email` field | 422 | Missing field returns validation error |
+| 6 | `GET /users/99999` | 404 | Non-existent user returns 404 JSON |
+| 7 | `GET /urls/99999` | 404 | Non-existent URL returns 404 JSON |
+| 8 | `GET /nonexistentcode` | 404 | Unknown short code returns 404 JSON |
+| 9 | `GET /totally/fake/route` | 404 | Unknown route returns 404 JSON |
+
+Live demo video:  
+https://github.com/user-attachments/assets/9ea2292a-210b-4ac5-ab4c-8919ee41c6fe
+
+
+
 
 ---
 
