@@ -21,6 +21,7 @@ services:
 
   web:
     build: .
+    restart: on-failure
     environment:
       DATABASE_HOST: hackathon-db
       DATABASE_PORT: ${DATABASE_PORT:-5432}
