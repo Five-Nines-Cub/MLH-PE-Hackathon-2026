@@ -5,7 +5,7 @@
 
 | Objective | Status | Notes |
 |-----------|--------|-------|
-| Write unit tests with pytest | ✅ Done | 97 unit + system tests across health, users, urls, events |
+| Write unit tests with pytest | ✅ Done | 97 unit + system tests across health, users, urls, events, and metrics |
 | Set up GitHub Actions CI | ✅ Done | `.github/workflows/ci.yml` — runs on every push/PR |
 | `GET /health` endpoint returns 200 | ✅ Done | `http://localhost:8080/health` |
 
@@ -23,7 +23,7 @@ Screenshot of Github Action CI with passing tests:
 | 50% Coverage: Use pytest-cov | ✅ Done | `pytest-cov` added to dev dependencies |
 | Integration Testing: Write tests that hit the API | ✅ Done | System tests use Flask `test_client()` against a real DB |
 | The Gatekeeper: CI fails if tests fail | ✅ Done | See below |
-| Error Handling: Document how app handles 404s and 500s | ✅ Done | [See README](README.md#error-handling) |
+| Error Handling: Document how app handles 404s and 500s | ✅ Done | [See API documentation](api.md) |
 
 #### Verification  
 Screenshot of 50% Coverage:  
@@ -78,7 +78,7 @@ https://github.com/user-attachments/assets/9ea2292a-210b-4ac5-ab4c-8919ee41c6fe
 
 | Objective | Status | Notes |
 |-----------|--------|-------|
-| Set up k6 or Locust for load testing | ✅ Done | utilizes k6 docker image |
+| Set up k6 or Locust for load testing | ✅ Done | [See load_test_k6.js](../load_test_k6.js) |
 | Simulate 50 concurrent users hitting your service | ✅ Done | See image below |
 | Document your Response Time (Latency) and Error Rate | ✅ Done | see image below |
 
@@ -101,13 +101,13 @@ Documented baseline p95 response time:
 
 | Objective | Status | Notes |
 |-----------|--------|-------|
-| 200 concurrent users for load testing | ✅ Done | Number of concurrent users can be configured in the command to run the tests |
-| Run 2+ instances of your app (containers) using Docker Compose | ✅ Done | Number of instances can be configured when starting up the container |
-| Put a Load Balancer (Nginx) in front to split traffic between instances | ✅ Done | See image below |
+| 200 concurrent users for load testing | ✅ Done | View how to set the number of users [here](../README.md#load-tests) |
+| Run 2+ instances of your app (containers) using Docker Compose | ✅ Done | View how to set the number of instances [here](../README.md#starting-the-docker-container) |
+| Put a Load Balancer (Nginx) in front to split traffic between instances | ✅ Done | [Config file](../nginx.conf) |
 | Keep response times under 3 seconds | ✅ Done | See image below |
 
 #### Verification  
-Screenshot of terminal output showing 200 concurrent users:  
+Screenshot of terminal output showing 200 concurrent users with 2 instances and a load balancer:  
 ![200 Concurrent Users](report-images/200_concurrent_test.png)
 
 Screenshot of terminal output showing 2 docker containers and nginx container:  
@@ -118,7 +118,7 @@ Screenshot of terminal output showing 2 docker containers and nginx container:
 | Objective | Status | Notes |
 |-----------|--------|-------|
 | Handle 500+ concurrent users (or 100 req/sec) | ✅ Done | 381 req/s See k6 load test results screenshot  |
-| Implement Redis | ✅ Done | Caching short code → URL mappings with 300s TTL |
+| Implement Redis | ✅ Done | config is in [docker-compose.yml](../docker-compose.yml), set/get/delete operations in [app/cache.py](../app/cache.py)|
 | Identifying Bottlenecks | ✅ Done | See bottleneck report below |
 | Error rate must stay under 5% | ✅ Done | 0% error rate (See below) |
 
@@ -151,8 +151,15 @@ Error Rate from above screenshot:
 
 Bottleneck Report:
 
-**Methodology:** Iteratively ran k6 at 500 VUs, observed failure rates and response times, applied targeted fixes, and re-ran to measure improvement.
+We ran `docker stats` to identify which parts of the system were under the most stress. The image below was taken from a 500+ concurrent user run with 2 web server instances and a nginx load balancer. From the image below, we can see that the database's CPU exceeds 100% and the web-server's CPU each exceeding past 90%, meaning that these are likely the source of our bottleneck.
 
+![Docker Stats](report-images/bottleneck.png)
+
+We also took a deeper look into the traffic routing with Nginx. The image below shows Nginx routing all traffic to a single container (` mlh-pe-hackathon-2026-web-1`) due to incorrect load balancing configuration — Nginx cached the DNS resolution at startup and never re-resolved it, effectively ignoring the second replica entirely.
+
+![Nginx Load Balancing Misconfiguration](report-images/bottleneck2.png)
+
+We made the following changes and saw the following results:  
 | Iteration | Change | Error Rate | p95 |
 |-----------|--------|------------|-----|
 | Baseline | Flask dev server, 2 replicas | 43.62% | 4.62s |
@@ -165,25 +172,16 @@ Bottleneck Report:
 
 **Identified Bottlenecks:**
 
-1. **Database connections (primary)** — Each request opened a new Postgres connection. At 500 VUs this saturated the DB. Fixed with `PooledPostgresqlDatabase` capping connections at 32, shared across workers. This was the single biggest improvement — error rate dropped from 20% → 2.6%.
+1. **Database connections (primary)** — Each request opened a new Postgres connection. At 500 VUs this saturated the DB. We fixed the cap on  `PooledPostgresqlDatabase` connections at 32, shared across workers, which resulted in the biggest improvement
 
 2. **Flask dev server** — `flask run` is single-threaded and not production-grade. Replaced with Gunicorn (`gthread` worker class). `gevent` was also tested but caused conflicts with Peewee's synchronous psycopg2 driver.
 
-3. **Nginx connection limits** — Default nginx config had no `worker_connections` limit set, causing connection queuing. Added `worker_processes auto` and `worker_connections 1024` with upstream keepalive.
+3. **Nginx connection limits** — Default nginx config had no `worker_connections` limit set, which caused connection queuing. Added `worker_processes auto` and `worker_connections 1024` with upstream keepalive.
 
-4. **Cache TTL too short** — Redis TTL of 60s caused frequent cache misses under load, pushing traffic back to the DB. Increased to 300s.
+4. **Cache TTL too short** — Redis TTL of 60s caused frequent cache misses under load, pushing traffic back to the DB. We increased to 300s and saw better performance.
 
-5. **Nginx DNS caching (root cause of load imbalance)** — Nginx resolved `web` to a single container IP at startup and stuck to it, sending 100% of traffic to one replica. Fixed by forcing a full nginx restart on every CI deploy so it re-resolves Docker DNS and picks up all container IPs. This eliminated the remaining 2.6% error rate entirely — final error rate is 0.00%.
+5. **Nginx DNS caching (root cause of load imbalance)** — Nginx resolved `web` to a single container IP at startup and stuck to it, sending 100% of traffic to one replica. Fixed by forcing a full nginx restart on every CI deploy so it re-resolves Docker DNS and picks up all container IPs. This eliminated the remaining 2.6% error rate we initally got. The final error rate is 0.00%.
 
-I ran `docker stats` to identify which parts of the system were under the most stress. The image below was taken from a 500+ concurrent user run with 2 web server instances and a nginx load balancer. From the image below, we can see that the database's CPU exceeds 100%, confirming it as the primary bottleneck.
-
-The web servers are also under significant load, though the database remains the primary bottleneck.
-
-![Docker Stats](report-images/bottleneck.png)
-
-The image below shows Nginx routing all traffic to a single container (` mlh-pe-hackathon-2026-web-1`) due to incorrect load balancing configuration — Nginx cached the DNS resolution at startup and never re-resolved it, effectively ignoring the second replica entirely.
-
-![Nginx Load Balancing Misconfiguration](report-images/bottleneck2.png)
 
 ---
 
@@ -192,8 +190,8 @@ The image below shows Nginx routing all traffic to a single container (` mlh-pe-
 
 | Objective | Status | Notes |
 |-----------|--------|-------|
-| Configure JSON logs | ✅ Done | See image below |
-| Expose a /metrics endpoint showing CPU/RAM usage | ✅ Done | See image below |
+| Configure JSON logs | ✅ Done | [logger configuration](../app/logging.py) |
+| Expose a /metrics endpoint showing CPU/RAM usage | ✅ Done | [metrics endpoint](../app/routes/metrics.py) |
 | Have a way to view logs without SSH-ing into the server. | ✅ Done | Fluent Bit ships logs to Better Stack — viewable at betterstack.com |
 
 #### Verification  
@@ -201,10 +199,10 @@ JSON logs:
 ![JSON logs](report-images/json_logs.png)
 
 Metrics endpoint:  
-![Metrics endpoint](report-images/metrics.png). 
+![Metrics endpoint](report-images/metrics.png)  
 
 External Logs (BetterStack):
-![Betterstack logs](report-images/BetterStackLogs.png). 
+![Betterstack logs](report-images/BetterStackLogs.png)  
 
 ### 🥈 Tier 2: Silver
 
@@ -225,6 +223,7 @@ High Error Rate Alert:
 ![High Error Rate Config](report-images/HighError2.png)
 
 #### Alert Configuration
+![Alert Message](report-images/alert.png)
 
 **Service Down** — Better Stack Uptime Monitor:
 ```yaml
@@ -264,3 +263,35 @@ alert:
 | Build a visual dashboard tracking 4+ metrics (Latency, Traffic, Errors, Saturation) | ✅ Done | Grafana dashboard with 5 panels — Traffic, Error Rate, Latency p50/p95/p99, CPU, RAM |
 | Write a runbook — "In Case of Emergency" guide | ⬜ Todo | |
 | Diagnose a fake issue using only the dashboard and logs | ⬜ Todo | |
+
+#### Verification
+Grafana Dashboard:  
+![Grafana Dashboard](report-images/grafana-dashboard.png)
+
+
+---
+
+## Documentation
+### 🥉 Tier 1: Bronze
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Setup instructions in README.md | ✅ Done | [README.md](../README.md) |
+| Architecture diagram | ✅ Done | [architecture.md](architecture.md) |
+| API documentation | ✅ Done | [api.md](api.md) |
+
+### 🥈 Tier 2: Silver
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Deployment guide | ✅ Done | [deploy.md](deploy.md) |
+| Troubleshooting | ✅ Done | [troubleshooting.md](troubleshooting.md) |
+| Config with environment variables | ✅ Done | [config.md](config.md) |
+
+### 🥇 Tier 3: Gold
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Runbooks | ✅ Done | [/runbooks/high-error-rate.md](/runbooks/high-error-rate.md) and [/runbooks/service-down.md](/runbooks/service-down.md) |
+| Decision Lob | ✅ Done | [decisions.md](decisions.md) |
+| Capacity plan | ✅ Done | [capacity.md](capacity.md) |
