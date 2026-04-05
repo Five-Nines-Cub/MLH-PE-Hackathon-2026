@@ -31,3 +31,4 @@ File: grafana/dashboards/app.json
 Status: ℹ️ Expected behavior — the error rate panel queries `flask_http_request_total`, which only records requests that reached Flask. At very high VU counts (~1150+), Nginx drops connections before they reach the app (EOF / connection reset). These failures are invisible to Flask metrics. Use k6 output or Nginx access logs to observe infrastructure-layer errors.
 
 ---
+You can also refer to [failure manual](failure_manual.md) and the [runbooks folder](runbooks/)
