@@ -148,6 +148,20 @@ The image below shows Nginx routing all traffic to a single container (` mlh-pe-
 
 ![Nginx Load Balancing Misconfiguration](/report-images/bottleneck2.png)
 
-
 ---
 
+## Observability
+### 🥉 Tier 1: Bronze
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Configure JSON logs | ✅ Done | See image below |
+| Expose a /metrics endpoint showing CPU/RAM usage | ✅ Done | See image below |
+| Have a way to view logs without SSH-ing into the server. | ✅ Done | Use ``` docker compose logs -f``` |
+
+#### Verification  
+JSON logs:  
+![JSON logs](/report-images/json_logs.png)
+
+Metrics endpoint:  
+![Metrics endpoint](/report-images/metrics.png)
