@@ -26,15 +26,18 @@ def create_url():
     data = request.get_json(silent=True) or {}
 
     if "original_url" not in data:
+        current_app.logger.warning("Create URL missing original_url")
         return jsonify({"error": {"original_url": "original_url is required"}}), 422
 
     user_id = data.get("user_id")
     if user_id is None:
+        current_app.logger.warning("Create URL missing user_id")
         return jsonify({"error": {"user_id": "user_id is required"}}), 422
 
     try:
         user = User.get_by_id(user_id)
     except User.DoesNotExist:
+        current_app.logger.warning("Create URL user not found: %s", user_id)
         return jsonify({"error": "User not found"}), 404
 
     try:
@@ -61,6 +64,7 @@ def create_url():
         details=json.dumps({"short_code": short_code, "original_url": data["original_url"]}),
     )
 
+    current_app.logger.info("Created URL id=%s short_code=%s user_id=%s", url.id, short_code, user_id)
     return jsonify(url.to_dict()), 201
 
 
@@ -98,6 +102,7 @@ def get_url(url_id):
     try:
         url = Url.get_by_id(url_id)
     except Url.DoesNotExist:
+        current_app.logger.warning("URL not found: %s", url_id)
         return jsonify({"error": "URL not found"}), 404
 
     data = url.to_dict()
@@ -127,6 +132,7 @@ def update_url(url_id):
     try:
         url = Url.get_by_id(url_id)
     except Url.DoesNotExist:
+        current_app.logger.warning("Update URL not found: %s", url_id)
         return jsonify({"error": "URL not found"}), 404
 
     data = request.get_json(silent=True) or {}
@@ -142,4 +148,5 @@ def update_url(url_id):
     _cache_delete(f"url:{url_id}")
     _cache_delete(f"short_code:{url.short_code}")
 
+    current_app.logger.info("Updated URL id=%s", url_id)
     return jsonify(url.to_dict()), 200

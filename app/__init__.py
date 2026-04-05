@@ -25,6 +25,7 @@ def create_app():
     app.logger.handlers = []
     app.logger.addHandler(handler)
     app.logger.setLevel(logging.INFO)
+    app.logger.propagate = False
 
     #initalize database
     init_db(app)
