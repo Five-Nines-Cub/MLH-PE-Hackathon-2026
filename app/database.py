@@ -1,6 +1,6 @@
 import os
 
-from flask import current_app
+
 from playhouse.pool import PooledPostgresqlDatabase
 from peewee import DatabaseProxy, Model
 import redis
@@ -50,17 +50,10 @@ def init_db(app):
     @app.before_request
     def _db_connect():
         if not os.environ.get("SKIP_DB_INIT"):
-            from flask import request, g
             db.connect(reuse_if_open=True)
-            g.is_health_check = request.path == "/health"
-            if not g.is_health_check:
-                current_app.logger.info("Database connected")
 
     @app.teardown_appcontext
     def _db_close(exc):
         if not os.environ.get("SKIP_DB_INIT") and not db.is_closed():
-            from flask import g
-            if not getattr(g, "is_health_check", False):
-                current_app.logger.info("Database closed")
             db.close()
 

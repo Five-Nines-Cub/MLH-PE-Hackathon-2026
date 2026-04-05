@@ -24,6 +24,7 @@ def _validate_user_fields(data):
 def bulk_import():
     file = request.files.get("file")
     if not file:
+        current_app.logger.warning("Bulk import attempted with no file")
         return jsonify({"error": "No file provided"}), 400
 
     content = file.read().decode("utf-8")
@@ -43,6 +44,7 @@ def bulk_import():
         "COALESCE((SELECT MAX(id) FROM users), 1))"
     )
 
+    current_app.logger.info("Bulk imported %d users", len(rows))
     return jsonify({"imported": len(rows)}), 201
 
 
@@ -64,6 +66,7 @@ def get_user(user_id):
     try:
         user = User.get_by_id(user_id)
     except User.DoesNotExist:
+        current_app.logger.warning("User not found: %s", user_id)
         return jsonify({"error": "User not found"}), 404
     return jsonify(user.to_dict()), 200
 
@@ -80,13 +83,16 @@ def create_user():
             errors[field] = f"{field} must be a string"
 
     if errors:
+        current_app.logger.warning("Create user validation failed: %s", errors)
         return jsonify({"error": errors}), 422
 
     try:
         user = User.create(username=data["username"], email=data["email"])
     except IntegrityError:
+        current_app.logger.warning("Create user conflict: username=%s email=%s", data["username"], data["email"])
         return jsonify({"error": "username or email already exists"}), 409
 
+    current_app.logger.info("Created user id=%s username=%s", user.id, user.username)
     return jsonify(user.to_dict()), 201
 
 
@@ -105,11 +111,13 @@ def update_user(user_id):
     try:
         user = User.get_by_id(user_id)
     except User.DoesNotExist:
+        current_app.logger.warning("Update user not found: %s", user_id)
         return jsonify({"error": "User not found"}), 404
 
     data = request.get_json(silent=True) or {}
     errors = _validate_user_fields(data)
     if errors:
+        current_app.logger.warning("Update user validation failed id=%s: %s", user_id, errors)
         return jsonify({"error": errors}), 422
 
     if "username" in data:
@@ -120,6 +128,8 @@ def update_user(user_id):
     try:
         user.save()
     except IntegrityError:
+        current_app.logger.warning("Update user conflict id=%s", user_id)
         return jsonify({"error": "username or email already exists"}), 409
 
+    current_app.logger.info("Updated user id=%s", user_id)
     return jsonify(user.to_dict()), 200
