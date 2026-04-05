@@ -66,7 +66,10 @@ A script was run against the production server (`http://64.23.146.45:8080`) send
 | 9 | `GET /totally/fake/route` | 404 | Unknown route returns 404 JSON |
 
 Live demo video:  
-<video src="report-images/GracefulFailureDemo.mov" controls width="800"></video>
+https://github.com/user-attachments/assets/9ea2292a-210b-4ac5-ab4c-8919ee41c6fe
+
+
+
 
 ---
 
