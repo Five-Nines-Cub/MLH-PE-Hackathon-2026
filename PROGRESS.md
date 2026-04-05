@@ -40,7 +40,7 @@ Screenshots of deploy workflow dependency and failed test commits:
 |-----------|--------|-------|
 | 70% Coverage: Use pytest-cov | ✅ Done | See image below |
 | Graceful failure | ✅ Done | Live demo against prod (See below) |
-| Restarts automatically when app process or container is killed | ⬜ Todo | |
+| Restarts automatically when app process or container is killed | ✅ Done | `restart: on-failure` in docker-compose.yml — demo TODO |
 | Create failure manual and document exactly what happens when things break | In Progress | [Failure Manual](./failure_manual.md) |
 
 #### Verification  
