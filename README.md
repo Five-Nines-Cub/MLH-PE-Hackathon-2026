@@ -222,6 +222,7 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 │   ├── __init__.py        # App factory
 │   ├── database.py        # DB proxy, BaseModel, connection hooks
 │   ├── cache.py           # wrapper for redis cache calls
+│   ├── logging.py         # configures the logger
 │   ├── models/
 │   │   ├── user.py
 │   │   ├── url.py
@@ -229,7 +230,8 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 │   └── routes/
 │       ├── users.py
 │       ├── urls.py
-│       └── events.py
+│       ├── events.py
+│       └── metrics.py
 ├── tests/
 │   ├── conftest.py        # system test fixtures (test DB setup)
 │   ├── test_unit.py       # pure unit tests (no DB)
@@ -240,7 +242,6 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
 ├── Dockerfile
-├── requirements.txt
 ├── load_test_k6.js
 ├── pyproject.toml
 ├── nginx.conf

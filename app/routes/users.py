@@ -1,7 +1,7 @@
 import csv
 import io
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from peewee import chunked, IntegrityError
 
 from app.database import db
@@ -96,7 +96,7 @@ def delete_user(user_id):
         user = User.get_by_id(user_id)
         user.delete_instance()
     except User.DoesNotExist:
-        pass
+        current_app.logger.info("Cannot delete %s, user does not exist", user_id)
     return "", 204
 
 

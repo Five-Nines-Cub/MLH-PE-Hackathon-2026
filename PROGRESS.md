@@ -61,7 +61,7 @@ Documented baseline p95 response time:
 |-----------|--------|-------|
 | 200 concurrent users for load testing | ✅ Done | Number of concurrent users can be configured in the command to run the tests |
 | Run 2+ instances of your app (containers) using Docker Compose | ✅ Done | Number of instances can be configured when starting up the container |
-| Put a Load Balancer (Nginx) in front to split traffic between instances | ✅ Done |  |
+| Put a Load Balancer (Nginx) in front to split traffic between instances | ✅ Done | See image below |
 | Keep response times under 3 seconds | ✅ Done | See image below |
 
 #### Verification  
