@@ -22,12 +22,17 @@ Screenshot of Github Action CI with passing tests:
 |-----------|--------|-------|
 | 50% Coverage: Use pytest-cov | ✅ Done | `pytest-cov` added to dev dependencies |
 | Integration Testing: Write tests that hit the API | ✅ Done | System tests use Flask `test_client()` against a real DB |
-| The Gatekeeper: CI fails if tests fail | ⬜ Todo | |
+| The Gatekeeper: CI fails if tests fail | ✅ Done | |
 | Error Handling: Document how app handles 404s and 500s | ✅ Done | [See README](README.md#error-handling) |
 
 #### Verification  
 Screenshot of 50% Coverage:  
 ![Code Coverage](/report-images/code_coverage.png)  
+
+Screenshots of deploy workflow dependency and failed test commits:  
+![The Gatekeeper Workflow](/report-images/gatekeeper1.png)  
+![Failed Test Run](/report-images/gatekeeper2.png). 
+![Failed Commit](/report-images/gatekeeper3.png).  
 
 ---
 
@@ -66,7 +71,7 @@ Documented baseline p95 response time:
 
 #### Verification  
 Screenshot of terminal output showing 200 concurrent users:  
-![50 Concurrent Users](/report-images/200_concurrent_test.png)
+![200 Concurrent Users](/report-images/200_concurrent_test.png)
 
 Screenshot of terminal output showing 2 docker containers and nginx container:  
 ![Docker and Nginx Containers](/report-images/docker_nginx_container.png)
@@ -75,24 +80,73 @@ Screenshot of terminal output showing 2 docker containers and nginx container:
 
 | Objective | Status | Notes |
 |-----------|--------|-------|
-| Handle 500+ concurrent users (or 100 req/sec) | TODO |  |
-| Implement Redis | ✅ Done | TODO: Link to documentation |
-| Identifying Bottlenecks | ✅ Done |  |
-| Error rate must stay under 5% | TODO |  |
+| Handle 500+ concurrent users (or 100 req/sec) | ✅ Done | 381 req/s See k6 load test results screenshot  |
+| Implement Redis | ✅ Done | Caching short code → URL mappings with 300s TTL |
+| Identifying Bottlenecks | ✅ Done | See bottleneck report below |
+| Error rate must stay under 5% | ✅ Done | 0% error rate (See below) |
 
 #### Verification  
 Evidence of caching:  
-![Evidence Of Caching](/report-images/caching.png)
+![Evidence Of Caching](/report-images/caching.png)   
+
+![Cache Hit Count](/report-images/CacheHitCount.png)   
 
 Screenshot of terminal output showing 500+ concurrent users:  
-![Docker and Nginx Containers](/report-images/docker_nginx_container.png)
+![500 concurrent users](/report-images/500_concurrent_load_balanced.png)
 
-Bottleneck Report:  
-I ran docker ps to identify which parts of the system were under the most stress. The image below was taken from a 500+ concurrent user run with 2 web server instances and a nginx load balancer. From the image below, we can see that the database's CPU exceeds 100%, meaning this is the likely source of the bottleneck. 
+Error Rate from above screenshot:
+```
+   █ THRESHOLDS
 
-The webservers are also very overloaded, 
+    http_req_duration
+    ✓ 'p(95)<1000' p(95)=936.32ms
 
-![Docker and Nginx Containers](/report-images/bottleneck.png)
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.00%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 23614   380.910431/s
+    checks_succeeded...: 100.00% 23614 out of 23614
+    checks_failed......: 0.00%   0 out of 23614
+```
+
+Bottleneck Report:
+
+**Methodology:** Iteratively ran k6 at 500 VUs, observed failure rates and response times, applied targeted fixes, and re-ran to measure improvement.
+
+| Iteration | Change | Error Rate | p95 |
+|-----------|--------|------------|-----|
+| Baseline | Flask dev server, 2 replicas | 43.62% | 4.62s |
+| +Gunicorn (sync, 2 workers) | Switched from `flask run` to gunicorn | ~43% | ~4.5s |
+| +Redis TTL 300s | Increased cache TTL from 60s → 300s | ~38% | ~4s |
+| +Nginx tuning | `worker_processes auto`, keepalive, 1024 connections | ~25% | ~2s |
+| +Gunicorn gthread (4 workers × 4 threads) | Replaced gevent (conflicted with Peewee) with gthread | 20.02% | 658ms |
+| +DB connection pooling (max 32) | `PooledPostgresqlDatabase` via Peewee playhouse | 2.60% | 769ms |
+| +Nginx load balancing fix | Forced nginx restart on deploy to re-resolve Docker DNS | 0.00% | 936ms |
+
+**Identified Bottlenecks:**
+
+1. **Database connections (primary)** — Each request opened a new Postgres connection. At 500 VUs this saturated the DB. Fixed with `PooledPostgresqlDatabase` capping connections at 32, shared across workers. This was the single biggest improvement — error rate dropped from 20% → 2.6%.
+
+2. **Flask dev server** — `flask run` is single-threaded and not production-grade. Replaced with Gunicorn (`gthread` worker class). `gevent` was also tested but caused conflicts with Peewee's synchronous psycopg2 driver.
+
+3. **Nginx connection limits** — Default nginx config had no `worker_connections` limit set, causing connection queuing. Added `worker_processes auto` and `worker_connections 1024` with upstream keepalive.
+
+4. **Cache TTL too short** — Redis TTL of 60s caused frequent cache misses under load, pushing traffic back to the DB. Increased to 300s.
+
+5. **Nginx DNS caching (root cause of load imbalance)** — Nginx resolved `web` to a single container IP at startup and stuck to it, sending 100% of traffic to one replica. Fixed by forcing a full nginx restart on every CI deploy so it re-resolves Docker DNS and picks up all container IPs. This eliminated the remaining 2.6% error rate entirely — final error rate is 0.00%.
+
+I ran `docker stats` to identify which parts of the system were under the most stress. The image below was taken from a 500+ concurrent user run with 2 web server instances and a nginx load balancer. From the image below, we can see that the database's CPU exceeds 100%, confirming it as the primary bottleneck.
+
+The web servers are also under significant load, though the database remains the primary bottleneck.
+
+![Docker Stats](/report-images/bottleneck.png)
+
+The image below shows Nginx routing all traffic to a single container (` mlh-pe-hackathon-2026-web-1`) due to incorrect load balancing configuration — Nginx cached the DNS resolution at startup and never re-resolved it, effectively ignoring the second replica entirely.
+
+![Nginx Load Balancing Misconfiguration](/report-images/bottleneck2.png)
 
 
 ---
