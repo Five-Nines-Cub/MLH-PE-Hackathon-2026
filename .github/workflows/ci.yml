@@ -72,4 +72,4 @@ jobs:
             } > .env
 
             docker compose build --no-cache web
-            docker compose up db redis web nginx -d
+            docker compose up db redis web nginx -d --scale web=2
