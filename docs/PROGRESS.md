@@ -149,7 +149,7 @@ Error Rate from above screenshot:
     checks_failed......: 0.00%   0 out of 23614
 ```
 
-Bottleneck Report:
+### Bottleneck Report:
 
 We ran `docker stats` to identify which parts of the system were under the most stress. The image below was taken from a 500+ concurrent user run with 2 web server instances and a nginx load balancer. From the image below, we can see that the database's CPU exceeds 100% and the web-server's CPU each exceeding past 90%, meaning that these are likely the source of our bottleneck.
 
