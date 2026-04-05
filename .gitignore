@@ -25,6 +25,8 @@ uv.lock
 
 # pytest
 .pytest_cache/
+.coverage
+htmlcov/
 
 # k6 load test output
 results.json

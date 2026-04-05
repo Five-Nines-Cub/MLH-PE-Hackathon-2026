@@ -16,6 +16,21 @@ Screenshot of `GET /health` returning 200:
 Screenshot of Github Action CI with passing tests:  
 ![Github CI](/report-images/GithubCI.png)  
 
+### 🥈 Tier 2: Silver
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| 50% Coverage: Use pytest-cov | ✅ Done | `pytest-cov` added to dev dependencies |
+| Integration Testing: Write tests that hit the API | ✅ Done | System tests use Flask `test_client()` against a real DB |
+| The Gatekeeper: CI fails if tests fail | ⬜ Todo | |
+| Error Handling: Document how app handles 404s and 500s | ✅ Done | [See README](README.md#error-handling) |
+
+#### Verification  
+Screenshot of 50% Coverage:  
+![Code Coverage](/report-images/code_coverage.png)  
+
+---
+
 ## Scalability
 ### 🥉 Tier 1: Bronze
 

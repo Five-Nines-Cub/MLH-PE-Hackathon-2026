@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "pytest-cov>=6.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -19,3 +19,10 @@ markers = [
     "unit: pure unit tests, no DB or network required",
     "system: integration tests that require a running database",
 ]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
