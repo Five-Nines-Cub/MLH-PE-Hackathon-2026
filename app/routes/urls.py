@@ -118,7 +118,7 @@ def delete_url(url_id):
         Event.delete().where(Event.url == url).execute()
         url.delete_instance()
     except Url.DoesNotExist:
-        pass
+        current_app.logger.info("Cannot delete %s, url does not exist", url_id)
     return "", 204
 
 

@@ -1,6 +1,7 @@
 import os
 
 from peewee import DatabaseProxy, Model, PostgresqlDatabase
+from flask import current_app
 import redis
 import json
 
@@ -28,6 +29,7 @@ def init_db(app):
     global cache
     if os.environ.get("SKIP_DB_INIT"):
         return
+    
     try:
         redis_host = os.environ.get("REDIS_HOST", "redis")
         redis_port = int(os.environ.get("REDIS_PORT", 6379))
@@ -36,9 +38,9 @@ def init_db(app):
         # smoke test (non-raising): ping
         try:
             cache.ping()
-            app.logger.debug("Connected to Redis cache")
+            app.logger.info("Connected to Redis cache")
         except Exception:
-            app.logger.debug("Redis ping failed; continuing without cache")
+            app.logger.info("Redis ping failed; continuing without cache")
     except Exception:
         cache = None
 
@@ -46,8 +48,11 @@ def init_db(app):
     def _db_connect():
         if not os.environ.get("SKIP_DB_INIT"):
             db.connect(reuse_if_open=True)
+            current_app.logger.info("Database connected")
 
     @app.teardown_appcontext
     def _db_close(exc):
         if not os.environ.get("SKIP_DB_INIT") and not db.is_closed():
             db.close()
+            current_app.logger.info("Database closed")
+

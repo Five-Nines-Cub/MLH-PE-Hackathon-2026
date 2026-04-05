@@ -15,15 +15,18 @@ def create_app():
     app.url_map.strict_slashes = False
 
     import logging
+    from app.logging import JSONFormatter
     import sys
     
-    # Send app logs to stdout so Docker picks them up
-    if not app.debug:
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setLevel(logging.INFO)
-        app.logger.addHandler(stream_handler)
-        app.logger.setLevel(logging.INFO)
+    # Configure logger
+    handler = logging.StreamHandler()
+    handler.setFormatter(JSONFormatter())
 
+    app.logger.handlers = []
+    app.logger.addHandler(handler)
+    app.logger.setLevel(logging.INFO)
+
+    #initalize database
     init_db(app)
 
     from app import models  # noqa: F401 - registers models with Peewee
@@ -37,7 +40,10 @@ def create_app():
         with db.connection_context():
             db.create_tables([User, Url, Event], safe=True)
 
+
     register_routes(app)
+    app.logger.info("Registered routes")
+
 
     @app.errorhandler(404)
     def not_found(e):
@@ -63,7 +69,6 @@ def create_app():
         cache_key = f"short_code:{short_code}"
         cached_url = _cache_get(cache_key)
         if cached_url:
-            app.logger.info("Cache hit for %s", cache_key)
             return redirect(cached_url, code=301)
 
         try:
@@ -82,4 +87,5 @@ def create_app():
         _cache_set(cache_key, url.original_url)
         return redirect(url.original_url, code=301)
 
+    app.logger.info("App finished initializing")
     return app
