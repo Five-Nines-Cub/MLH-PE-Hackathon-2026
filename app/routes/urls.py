@@ -1,12 +1,14 @@
 import json
+import os
 from datetime import datetime, timezone
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from peewee import IntegrityError
 
 from app.models.event import Event
 from app.models.url import Url, generate_short_code
 from app.models.user import User
+from app.cache import _cache_get, _cache_delete, _cache_set
 
 urls_bp = Blueprint("urls", __name__, url_prefix="/urls")
 
@@ -17,7 +19,6 @@ def _make_short_code():
         if not Url.select().where(Url.short_code == code).exists():
             return code
     raise RuntimeError("Failed to generate unique short code")
-
 
 @urls_bp.route("/", methods=["POST"])
 def create_url():
@@ -76,11 +77,26 @@ def list_urls():
 
 @urls_bp.route("/<int:url_id>", methods=["GET"])
 def get_url(url_id):
+    cache_key = f"url:{url_id}"
+    cached = _cache_get(cache_key)
+
+    if cached is not None:
+        current_app.logger.info("Cache hit for %s", cache_key)
+        return jsonify(cached), 200
+
+    #cache miss
     try:
         url = Url.get_by_id(url_id)
     except Url.DoesNotExist:
         return jsonify({"error": "URL not found"}), 404
-    return jsonify(url.to_dict()), 200
+
+    data = url.to_dict()
+
+    #add to cache
+    current_app.logger.info("Caching %s", cache_key)
+    _cache_set(cache_key, data)
+
+    return jsonify(data), 200
 
 
 @urls_bp.route("/<int:url_id>", methods=["PUT"])
@@ -99,5 +115,10 @@ def update_url(url_id):
 
     url.updated_at = datetime.now(timezone.utc)
     url.save()
+
+    # invalidate cache for this url
+    cache_key = f"url:{url_id}"
+    current_app.logger.info("Invalidating cache for %s", cache_key)
+    _cache_delete(cache_key)
 
     return jsonify(url.to_dict()), 200

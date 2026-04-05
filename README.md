@@ -164,6 +164,7 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── app/
 │   ├── __init__.py        # App factory
 │   ├── database.py        # DB proxy, BaseModel, connection hooks
+│   ├── cache.py           # wrapper for redis cache calls
 │   ├── models/
 │   │   ├── user.py
 │   │   ├── url.py
