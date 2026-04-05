@@ -1,6 +1,9 @@
+import os
 import pytest
 import string
 from datetime import datetime, timezone
+
+os.environ["SKIP_DB_INIT"] = "1"
 
 pytestmark = pytest.mark.unit
 
