@@ -2,7 +2,7 @@
 
 A URL shortener REST API built with Flask, Peewee ORM, and PostgreSQL.
 
-**Stack:** Flask · Peewee ORM · PostgreSQL · uv
+**Stack:** Flask · Gunicorn · Peewee ORM · PostgreSQL · Redis · Nginx · Fluent Bit · uv
 
 ---
 
@@ -126,11 +126,16 @@ docker exec hackathon-db psql -U postgres -d hackathon_db -c "SELECT setval(pg_g
 
 ## Running Specific Services
 
-The `docker-compose.yml` defines five services: `db`, `web`, `nginx`, `db_test`, and `k6`. You rarely need all of them at once.
+The `docker-compose.yml` defines the following services: `db`, `web`, `nginx`, `redis`, `fluent-bit`, `db_test`, and `k6`. You rarely need all of them at once.
 
-**App only (db + web + nginx) — typical dev workflow:**
+**App only (db + redis + web + nginx) — typical dev workflow:**
 ```bash
-docker compose up db web nginx --build
+docker compose up db redis web nginx --build
+```
+
+**With log shipping to Better Stack:**
+```bash
+docker compose up db redis web nginx fluent-bit --build
 ```
 
 **App DB only — if you just need Postgres for local development:**
@@ -247,8 +252,38 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── load_test_k6.js
 ├── pyproject.toml
 ├── nginx.conf
+├── fluent-bit.conf    # Fluent Bit log shipper config (ships to Better Stack)
+├── parsers.conf       # Fluent Bit JSON parser (unwraps app JSON logs)
 └── .env.example
 ```
+
+## Logging & Observability
+
+The app emits structured JSON logs on every request via a custom `JSONFormatter` (`app/logging.py`):
+
+```json
+{"timestamp": "2026-04-05T11:27:45.119721", "level": "INFO", "message": "Created user id=1 username=alice", "module": "users"}
+```
+
+Log levels used:
+- `INFO` — successful operations (user created, URL created, cache hits)
+- `WARNING` — client errors (validation failures, 404s, 409 conflicts)
+
+**View logs locally:**
+```bash
+docker compose logs -f web
+```
+
+**View logs without SSH (production):**
+Logs are shipped to [Better Stack](https://betterstack.com) via Fluent Bit. Requires `BETTERSTACK_TOKEN` and `BETTERSTACK_HOST` set as environment variables (or GitHub secrets for CI).
+
+**Metrics endpoint:**
+```bash
+curl http://localhost:8080/metrics/
+# {"cpu_percent": 0.3, "ram_percent": 19.1, "ram_total": ..., "ram_used": ...}
+```
+
+---
 
 ## Error Handling
 
