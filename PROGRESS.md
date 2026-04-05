@@ -194,11 +194,30 @@ The image below shows Nginx routing all traffic to a single container (` mlh-pe-
 |-----------|--------|-------|
 | Configure JSON logs | ✅ Done | See image below |
 | Expose a /metrics endpoint showing CPU/RAM usage | ✅ Done | See image below |
-| Have a way to view logs without SSH-ing into the server. | ✅ Done | Use ``` docker compose logs -f``` |
+| Have a way to view logs without SSH-ing into the server. | ✅ Done | Fluent Bit ships logs to Better Stack — viewable at betterstack.com |
 
 #### Verification  
 JSON logs:  
 ![JSON logs](/report-images/json_logs.png)
 
 Metrics endpoint:  
-![Metrics endpoint](/report-images/metrics.png)
+![Metrics endpoint](/report-images/metrics.png). 
+
+External Logs (BetterStack):
+![Betterstack logs](/report-images/BetterStackLogs.png). 
+
+### 🥈 Tier 2: Silver
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Configure alerts for "Service Down" and "High Error Rate" | ⬜ Todo | |
+| Connect alerts to a channel (Slack, Discord, Email) | ⬜ Todo | |
+| Alert must fire within 5 minutes of failure | ⬜ Todo | |
+
+### 🥇 Tier 3: Gold
+
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Build a visual dashboard tracking 4+ metrics (Latency, Traffic, Errors, Saturation) | ⬜ Todo | |
+| Write a runbook — "In Case of Emergency" guide | ⬜ Todo | |
+| Diagnose a fake issue using only the dashboard and logs | ⬜ Todo | |
