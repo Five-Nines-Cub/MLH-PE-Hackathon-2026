@@ -42,6 +42,20 @@ cp .env.example .env
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PYTHONUNBUFFERED` | `1` | Disables Python output buffering so logs appear immediately in Docker. Should always be `1` in Docker |
+| `SKIP_DB_INIT` | — | Set to any value to skip DB table creation and connection hooks on startup. Used in test environments |
+
+### Better Stack (Log Shipping)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BETTERSTACK_TOKEN` | — | Source token for authenticating with Better Stack log ingestion. Set as a GitHub Secret in production |
+| `BETTERSTACK_HOST` | — | Better Stack ingestion hostname (e.g. `in.logs.betterstack.com`). Set as a GitHub Secret in production |
+
+### Grafana
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GRAFANA_PASSWORD` | — | Admin password for the Grafana dashboard at `:3000`. Set as a GitHub Secret in production |
 
 ---
 
@@ -76,6 +90,13 @@ REDIS_TTL=300
 # Flask
 FLASK_APP=app:create_app
 FLASK_DEBUG=0
+
+# Better Stack
+BETTERSTACK_TOKEN=your_token_here
+BETTERSTACK_HOST=in.logs.betterstack.com
+
+# Grafana
+GRAFANA_PASSWORD=your_password_here
 ```
 
 > **Note:** When running via `docker compose`, `DATABASE_HOST` should be `hackathon-db` and `REDIS_HOST` should be `redis` to match the Docker service names. For local development outside Docker, use `localhost` for both.
