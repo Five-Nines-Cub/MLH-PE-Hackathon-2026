@@ -40,7 +40,7 @@ Screenshots of deploy workflow dependency and failed test commits:
 |-----------|--------|-------|
 | 70% Coverage: Use pytest-cov | ✅ Done | See image below |
 | Graceful failure | ✅ Done | Live demo against prod (See below) |
-| Restarts automatically when app process or container is killed | ✅ Done | `restart: on-failure` in docker-compose.yml — demo TODO |
+| Restarts automatically when app process or container is killed | ✅ Done | `restart: on-failure` in docker-compose.yml — kills both containers with `kill -9`, restarts within seconds |
 | Create failure manual and document exactly what happens when things break | ✅ Done | [Failure Manual](./failure_manual.md) |
 
 #### Verification  
@@ -262,11 +262,56 @@ alert:
 |-----------|--------|-------|
 | Build a visual dashboard tracking 4+ metrics (Latency, Traffic, Errors, Saturation) | ✅ Done | Grafana dashboard with 5 panels — Traffic, Error Rate, Latency p50/p95/p99, CPU, RAM |
 | Write a runbook — "In Case of Emergency" guide | ✅ Done | [service-down.md](runbooks/service-down.md) and [high-error-rate.md](runbooks/high-error-rate.md) |
-| Diagnose a fake issue using only the dashboard and logs | ⬜ Todo | |
+| Diagnose a fake issue using only the dashboard and logs | ✅ Done | See incident walkthrough below |
 
 #### Verification
 Grafana Dashboard:  
 ![Grafana Dashboard](report-images/grafana-dashboard.png)
+
+#### Fake Issue — High Error Rate Incident Walkthrough
+
+**Setup:** We ran [test_bad_inputs.sh](../test_bad_inputs.sh) against production, which fires 60+ parallel bad requests (404s and 422s) in a single burst to simulate a spike in client errors.
+
+**Step 1 — Alert fires**
+
+Better Stack detected the spike at **8:19am PDT** and sent an email alert within 1 minute. The alert showed:
+- **Cause:** Value > 10 (threshold)
+- **Source:** five_nines_prod
+- **Current value:** 84 warnings in the last minute
+
+![Incident Alert Email](report-images/IncidentAlert.png)
+
+**Step 2 — Acknowledge the incident**
+
+The incident was acknowledged immediately via email:
+
+![Incident Acknowledged](report-images/IncidentManualAck.png)
+
+**Step 3 — Check the alert chart**
+
+The Better Stack alert chart showed the large spike **after 8:00am PDT** — the smaller spikes before 8am were earlier test runs that stayed below the threshold. The post-8am spike crossed the alert threshold of 10 and triggered the incident:
+
+![Alert Chart](report-images/IncidentAlertAck.png)
+
+**Step 4 — Inspect logs in Better Stack**
+
+Filtered logs by `log.level:WARNING OR log.level:ERROR`. Every entry showed `"message": "User not found: 99999"` — confirming the errors were all 404s from bad request IDs, not a real system failure:
+
+![Incident Logs](report-images/IncidentLogs.png)
+
+**Step 5 — Cross-reference in Grafana**
+
+Grafana's Error Rate panel confirmed the spike correlating with the burst of bad requests. Traffic, Latency, CPU, and RAM remained stable — ruling out an infrastructure issue:
+
+![Grafana Spike](report-images/IncidentGrafanaSpike.png)
+
+**Step 6 — Incident auto-resolves**
+
+Once the script finished, error count dropped back below 10/min. Better Stack auto-resolved the incident after 47 seconds:
+
+![Incident Auto Resolved](report-images/IncidentAutoResolve.png)
+
+**Conclusion:** Using only the dashboard and logs (no SSH), we identified that the spike was caused by 84 invalid requests hitting non-existent user IDs in under a minute — not a system fault. The service remained healthy throughout.
 
 
 ---

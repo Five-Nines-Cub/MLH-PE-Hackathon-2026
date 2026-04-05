@@ -150,6 +150,40 @@ uv run pytest -m system -k "test_name"
 
 System tests run on a separate test_DB on port `5433` with database `hackathon_test_db`. Tables are created and dropped automatically between tests.
 
+### Graceful Failure Tests
+
+Tests that the app returns clean JSON errors (never crashes) when sent bad inputs against the production server.
+
+```bash
+# Make executable (first time only)
+chmod +x test_bad_inputs.sh
+
+# Run against prod (default)
+./test_bad_inputs.sh
+
+# Run against local
+BASE_URL=http://localhost:8080 ./test_bad_inputs.sh
+```
+
+The script fires 30+ bad requests (missing fields, wrong types, non-existent IDs) and validates every response is a proper 4xx JSON error. A spam phase at the end fires 60 parallel bad requests to trigger the High Error Rate alert in Better Stack.
+
+### Chaos Mode — Container Restart Demo
+
+Kill both web containers simultaneously to verify `restart: on-failure` brings them back automatically:
+
+```bash
+# Get host PIDs of both containers
+docker inspect --format '{{.State.Pid}}' mlh-pe-hackathon-2026-web-1 mlh-pe-hackathon-2026-web-2
+
+# Kill both (replace with actual PIDs)
+kill -9 <pid1> <pid2>
+
+# Watch them restart
+docker ps
+```
+
+Containers restart within seconds. `restart: on-failure` is configured in `docker-compose.yml`.
+
 ### Load Tests
 Before running the load tests, ensure that the docker instance is running. Follow the instructions in [Starting The Docker Container](#starting-the-docker-container) to start the docker instance. When starting the docker container, you can specify a specific number of instances.  
 
@@ -227,6 +261,7 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── run.py
 ├── load_test_k6.js        # steady-state load test (configurable VUs)
 ├── load_test_ramp.js      # ramping load test (0 → 1500 VUs, finds breaking point)
+├── test_bad_inputs.sh     # graceful failure test (bad inputs → clean JSON errors)
 ├── pyproject.toml
 ├── nginx.conf
 ├── fluent-bit.conf        # Fluent Bit log shipper config (ships to Better Stack)
