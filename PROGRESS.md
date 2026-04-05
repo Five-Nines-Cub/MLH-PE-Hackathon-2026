@@ -5,7 +5,7 @@
 
 | Objective | Status | Notes |
 |-----------|--------|-------|
-| Write unit tests with pytest | ✅ Done | 84 unit + system tests across health, users, urls, events |
+| Write unit tests with pytest | ✅ Done | 97 unit + system tests across health, users, urls, events |
 | Set up GitHub Actions CI | ✅ Done | `.github/workflows/ci.yml` — runs on every push/PR |
 | `GET /health` endpoint returns 200 | ✅ Done | `http://localhost:8080/health` |
 
@@ -22,7 +22,7 @@ Screenshot of Github Action CI with passing tests:
 |-----------|--------|-------|
 | 50% Coverage: Use pytest-cov | ✅ Done | `pytest-cov` added to dev dependencies |
 | Integration Testing: Write tests that hit the API | ✅ Done | System tests use Flask `test_client()` against a real DB |
-| The Gatekeeper: CI fails if tests fail | ✅ Done | |
+| The Gatekeeper: CI fails if tests fail | ✅ Done | See below |
 | Error Handling: Document how app handles 404s and 500s | ✅ Done | [See README](README.md#error-handling) |
 
 #### Verification  
