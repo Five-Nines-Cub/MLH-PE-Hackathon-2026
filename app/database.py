@@ -32,7 +32,7 @@ def init_db(app):
         redis_host = os.environ.get("REDIS_HOST", "redis")
         redis_port = int(os.environ.get("REDIS_PORT", 6379))
         redis_db = int(os.environ.get("REDIS_DB", 0))
-        cache = redis.Redis(host=redis_host, port=redis_port, db=redis_db, decode_responses=True, socket_connect_timeout=1, socket_timeout=1)
+        cache = redis.Redis(host=redis_host, port=redis_port, db=redis_db, decode_responses=True, socket_connect_timeout=5, socket_timeout=10)
         # smoke test (non-raising): ping
         try:
             cache.ping()
