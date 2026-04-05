@@ -8,7 +8,6 @@ A URL shortener REST API built with Flask, Peewee ORM, and PostgreSQL.
 **Stack:** Flask · Gunicorn · Peewee ORM · PostgreSQL · Redis · Nginx · Fluent Bit · uv
 
 ---
-
 ## Starting The Docker Container
 
 ```bash
@@ -24,75 +23,6 @@ docker compose up --build
 # 4. Start the docker container with a specified number of instances
 docker compose up --build --scale web=<NumInstances>
 ```
-
----
-
-## API Reference
-
-### Health & Redirect
-
-| Method | Endpoint        | Description |
-|--------|-----------------|-------------|
-| GET    | `/health`       | Returns `{"status":"ok"}` |
-| GET    | `/<short_code>` | Redirects browser to original URL (301); 404 if inactive or not found |
-
----
-
-### Users
-
-| Method | Endpoint          | Description              |
-|--------|-------------------|--------------------------|
-| GET    | `/users`          | List all users (optional `?page=&per_page=`) |
-| GET    | `/users/<id>`     | Get user by ID           |
-| POST   | `/users`          | Create a user            |
-| PUT    | `/users/<id>`     | Update a user            |
-| DELETE | `/users/<id>`     | Delete a user            |
-| POST   | `/users/bulk`     | Bulk import from CSV     |
-
-**Create user body:**
-```json
-{ "username": "alice", "email": "alice@example.com" }
-```
-
-**Bulk import:**
-```bash
-curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
-```
-
----
-
-### URLs
-
-| Method | Endpoint                      | Description                              |
-|--------|-------------------------------|------------------------------------------|
-| GET    | `/urls`                       | List all URLs — filter via query params or JSON body: `user_id`, `is_active=true\|false` |
-| GET    | `/urls/<id>`                  | Get URL by ID                            |
-| POST   | `/urls`                       | Create a short URL (auto-generates 6-char code) |
-| PUT    | `/urls/<id>`                  | Update `title` or `is_active`            |
-| DELETE | `/urls/<id>`                  | Delete a URL and its events (idempotent, always 204) |
-
-**Create URL body:**
-```json
-{ "user_id": 1, "original_url": "https://example.com", "title": "Example" }
-```
-
----
-
-### Events
-
-| Method | Endpoint   | Description       |
-|--------|------------|-------------------|
-| GET    | `/events`  | List all events — filter via query params or JSON body: `url_id`, `user_id`, `event_type` |
-| POST   | `/events`  | Create an event   |
-
-Events are created automatically when a URL is created (`event_type: "created"`). Additional events (e.g. `click`, `view`) can be created manually.
-
-**Create event body:**
-```json
-{ "url_id": 1, "user_id": 1, "event_type": "click", "details": { "referrer": "https://google.com" } }
-```
-
-`user_id` and `details` are optional.
 
 ---
 
@@ -191,7 +121,7 @@ These tests test the api endpoints of our program. It requires the test database
 uv sync --group dev
 
 # 2. Start up the test docker container
-docker compose up db_test -d
+docker compose up db_test redis -d
 
 # 3. Run system tests
 uv run pytest -m system
@@ -234,29 +164,59 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 │   ├── cache.py           # wrapper for redis cache calls
 │   ├── logging.py         # configures the logger
 │   ├── models/
+│   │   ├── __init__.py
 │   │   ├── user.py
 │   │   ├── url.py
 │   │   └── event.py
 │   └── routes/
+│       ├── __init__.py
 │       ├── users.py
 │       ├── urls.py
 │       ├── events.py
 │       └── metrics.py
 ├── tests/
+│   ├── __init__.py
 │   ├── conftest.py        # system test fixtures (test DB setup)
 │   ├── test_unit.py       # pure unit tests (no DB)
 │   ├── test_health.py
 │   ├── test_users.py
 │   ├── test_urls.py
+│   ├── test_metrics.py
+│   ├── test_cache.py
+│   ├── test_database_init.py
+│   ├── test_models_event.py
+│   ├── test_redirect.py
 │   └── test_events.py
+├── seed/
+│   ├── init.sql           # auto-runs on first DB startup
+│   ├── users.csv
+│   ├── urls.csv
+│   └── events.csv
+├── docs/
+│   ├── PROGRESS.md        # hackathon quest progress tracker
+│   ├── architecture.md    # Bronze: architecture diagram (boxes + arrows)
+│   ├── deploy.md          # deployment and rollback guide
+│   ├── api.md             # API Guide
+│   ├── failure_manual.md  # failure modes, recovery steps, and debugging guide
+│   ├── troubleshooting.md # Silver: bugs you hit today + fixes
+│   ├── config.md          # Silver: all environment variables listed
+│   ├── decisions.md       # Gold: why Redis, why Nginx, why Peewee, etc.
+│   ├── capacity.md        # Gold: load test results, estimated user limits
+│   ├── report-images/     # screenshots and videos for PROGRESS.md
+│   └── runbooks/
+│       ├── service-down.md    # Gold: what to do when health check fails
+│       └── high-error-rate.md # Gold: what to do when error rate spikes
+├── k6_out/
+│   └── results.json       # load test output
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
 ├── Dockerfile
+├── run.py
 ├── load_test_k6.js
 ├── pyproject.toml
 ├── nginx.conf
-├── fluent-bit.conf    # Fluent Bit log shipper config (ships to Better Stack)
-├── parsers.conf       # Fluent Bit JSON parser (unwraps app JSON logs)
+├── fluent-bit.conf        # Fluent Bit log shipper config (ships to Better Stack)
+├── parsers.conf           # Fluent Bit JSON parser (unwraps app JSON logs)
 └── .env.example
 ```
 

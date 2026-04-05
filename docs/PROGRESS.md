@@ -11,10 +11,10 @@
 
 #### Verification  
 Screenshot of `GET /health` returning 200:  
-![Health End Point](/report-images/Health_endpoint.png)  
+![Health End Point](report-images/Health_endpoint.png)  
 
 Screenshot of Github Action CI with passing tests:  
-![Github CI](/report-images/GithubCI.png)  
+![Github CI](report-images/GithubCI.png)  
 
 ### 🥈 Tier 2: Silver
 
@@ -27,12 +27,12 @@ Screenshot of Github Action CI with passing tests:
 
 #### Verification  
 Screenshot of 50% Coverage:  
-![Code Coverage](/report-images/code_coverage.png) 
+![Code Coverage](report-images/code_coverage.png) 
 
 Screenshots of deploy workflow dependency and failed test commits:  
-![The Gatekeeper Workflow](/report-images/gatekeeper1.png)  
-![Failed Test Run](/report-images/gatekeeper2.png). 
-![Failed Commit](/report-images/gatekeeper3.png). 
+![The Gatekeeper Workflow](report-images/gatekeeper1.png)  
+![Failed Test Run](report-images/gatekeeper2.png). 
+![Failed Commit](report-images/gatekeeper3.png). 
 
 ### 🥇 Tier 3: Gold
 
@@ -45,7 +45,7 @@ Screenshots of deploy workflow dependency and failed test commits:
 
 #### Verification  
 Screenshot of 70% Coverage:  
-![Code Coverage](/report-images/code_coverage.png)  
+![Code Coverage](report-images/code_coverage.png)  
 
 #### Graceful Failure — Live Demo
 
@@ -84,7 +84,7 @@ https://github.com/user-attachments/assets/9ea2292a-210b-4ac5-ab4c-8919ee41c6fe
 
 #### Verification  
 Screenshot of terminal output showing 50 concurrent users:  
-![50 concurrent users](/report-images/50_concurrent_test.png)
+![50 concurrent users](report-images/50_concurrent_test.png)
 
 Documented baseline p95 response time:  
 ```
@@ -108,10 +108,10 @@ Documented baseline p95 response time:
 
 #### Verification  
 Screenshot of terminal output showing 200 concurrent users:  
-![200 Concurrent Users](/report-images/200_concurrent_test.png)
+![200 Concurrent Users](report-images/200_concurrent_test.png)
 
 Screenshot of terminal output showing 2 docker containers and nginx container:  
-![Docker and Nginx Containers](/report-images/docker_nginx_container.png)
+![Docker and Nginx Containers](report-images/docker_nginx_container.png)
 
 ### 🥇 Tier 3: Gold
 
@@ -124,12 +124,12 @@ Screenshot of terminal output showing 2 docker containers and nginx container:
 
 #### Verification  
 Evidence of caching:  
-![Evidence Of Caching](/report-images/caching.png)   
+![Evidence Of Caching](report-images/caching.png)   
 
-![Cache Hit Count](/report-images/CacheHitCount.png)   
+![Cache Hit Count](report-images/CacheHitCount.png)   
 
 Screenshot of terminal output showing 500+ concurrent users:  
-![500 concurrent users](/report-images/500_concurrent_load_balanced.png)
+![500 concurrent users](report-images/500_concurrent_load_balanced.png)
 
 Error Rate from above screenshot:
 ```
@@ -179,11 +179,11 @@ I ran `docker stats` to identify which parts of the system were under the most s
 
 The web servers are also under significant load, though the database remains the primary bottleneck.
 
-![Docker Stats](/report-images/bottleneck.png)
+![Docker Stats](report-images/bottleneck.png)
 
 The image below shows Nginx routing all traffic to a single container (` mlh-pe-hackathon-2026-web-1`) due to incorrect load balancing configuration — Nginx cached the DNS resolution at startup and never re-resolved it, effectively ignoring the second replica entirely.
 
-![Nginx Load Balancing Misconfiguration](/report-images/bottleneck2.png)
+![Nginx Load Balancing Misconfiguration](report-images/bottleneck2.png)
 
 ---
 
@@ -198,13 +198,13 @@ The image below shows Nginx routing all traffic to a single container (` mlh-pe-
 
 #### Verification  
 JSON logs:  
-![JSON logs](/report-images/json_logs.png)
+![JSON logs](report-images/json_logs.png)
 
 Metrics endpoint:  
-![Metrics endpoint](/report-images/metrics.png). 
+![Metrics endpoint](report-images/metrics.png). 
 
 External Logs (BetterStack):
-![Betterstack logs](/report-images/BetterStackLogs.png). 
+![Betterstack logs](report-images/BetterStackLogs.png). 
 
 ### 🥈 Tier 2: Silver
 
@@ -217,12 +217,12 @@ External Logs (BetterStack):
 #### Verification
 
 Service Down Monitor:
-![Service Down Monitor](/report-images/ServiceDown1.png)
-![Service Down Alert](/report-images/ServiceDown2.png)
+![Service Down Monitor](report-images/ServiceDown1.png)
+![Service Down Alert](report-images/ServiceDown2.png)
 
 High Error Rate Alert:
-![High Error Rate Alert](/report-images/HighError1.png)
-![High Error Rate Config](/report-images/HighError2.png)
+![High Error Rate Alert](report-images/HighError1.png)
+![High Error Rate Config](report-images/HighError2.png)
 
 #### Alert Configuration
 

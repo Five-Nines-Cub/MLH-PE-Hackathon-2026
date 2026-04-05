@@ -55,12 +55,14 @@ Once you've identified which component is failing, jump to the relevant section 
 
 | Symptom | Likely section |
 |---------|---------------|
-| `curl /health` times out | §5 Nginx Failure or §15 Port Conflicts |
+| Site completely unreachable (timeout) | §16 Droplet Unreachable or §5 Nginx Failure |
+| `curl /health` times out (Droplet up) | §5 Nginx Failure or §15 Port Conflicts |
 | `curl /health` returns 500 | §2 Database Failure or §3 DB Connection Pool Exhaustion |
 | Container shows `Restarting` | §14 Missing Environment Variables |
 | All responses slow, no errors | §3 DB Connection Pool, §6 High Load, §7 Cold Cache |
 | Empty API responses | §8 Missing Seed Data |
 | Build fails in CI | §11 uv Lockfile, §12 uv Version |
+| Logs not appearing in Better Stack | §17 Fluent Bit Failure |
 
 ---
 
@@ -502,6 +504,76 @@ lsof -i :6379
 
 # Kill the conflicting process or change the port mapping in docker-compose.yml
 ```
+
+---
+
+### 16. DigitalOcean Droplet Unreachable
+
+**Trigger**
+* Droplet is powered off, rebooted, or unresponsive (OOM kill, kernel panic, etc.)
+
+**Behavior**
+* `http://<DROPLET_HOST>:8080` is unreachable — all requests time out
+* Better Stack uptime monitor fires a "Service Down" alert within ~3 minutes
+* SSH access is also unavailable until the Droplet recovers
+
+**Impact**
+* Full outage — the entire stack is hosted on a single Droplet
+
+**Recovery**
+
+1. Log in to the [DigitalOcean Control Panel](https://cloud.digitalocean.com)
+2. Navigate to **Droplets** → select the Droplet
+3. If powered off: click **Power On**
+4. If unresponsive: click **Power Cycle** (hard reboot)
+5. Wait ~30 seconds, then SSH back in and verify:
+
+```bash
+ssh root@<DROPLET_HOST>
+cd MLH-PE-Hackathon-2026
+docker ps   # check containers came back up
+curl -s http://localhost:8080/health
+```
+
+If containers did not restart automatically:
+```bash
+docker compose up db redis web nginx fluent-bit -d --scale web=2
+```
+
+**Mitigation**
+* Docker's `restart: on-failure` policy restarts individual containers after a crash, but does not help if the entire Droplet goes down
+* DigitalOcean provides a recovery console in the UI if SSH is unavailable — use **Droplet Console** under Access
+
+---
+
+### 17. Fluent Bit Failure (Log Shipping Down)
+
+**Trigger**
+
+```bash
+docker stop mlh-pe-hackathon-2026-fluent-bit-1
+```
+
+**Behavior**
+* App logs are still written to stdout by the web containers — nothing changes from the app's perspective
+* Logs stop being shipped to Better Stack — the external log viewer goes dark
+* Better Stack's "High Error Rate" alert may stop firing since it relies on ingested logs
+
+**Impact**
+* No user-facing outage — the app continues to run normally
+* Observability is degraded: logs are only accessible via `docker logs` on the server
+
+**Recovery**
+
+```bash
+docker start mlh-pe-hackathon-2026-fluent-bit-1
+```
+
+Fluent Bit resumes shipping from where it left off (it uses a file position tracker). Logs produced during the downtime may not be retroactively shipped.
+
+**Mitigation**
+* Fluent Bit is isolated from the app — its failure cannot cascade to the web or DB containers
+* Ensure `BETTERSTACK_TOKEN` and `BETTERSTACK_HOST` are set correctly; a missing token causes Fluent Bit to silently drop logs without crashing
 
 ---
 
