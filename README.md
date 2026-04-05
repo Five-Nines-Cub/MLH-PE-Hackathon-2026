@@ -43,6 +43,7 @@ docker compose up --build --scale web=<NumInstances>
 | GET    | `/users/<id>`     | Get user by ID           |
 | POST   | `/users`          | Create a user            |
 | PUT    | `/users/<id>`     | Update a user            |
+| DELETE | `/users/<id>`     | Delete a user            |
 | POST   | `/users/bulk`     | Bulk import from CSV     |
 
 **Create user body:**
@@ -61,10 +62,11 @@ curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
 
 | Method | Endpoint                      | Description                              |
 |--------|-------------------------------|------------------------------------------|
-| GET    | `/urls`                       | List all URLs (optional `?user_id=`)     |
+| GET    | `/urls`                       | List all URLs — filter via query params or JSON body: `user_id`, `is_active=true\|false` |
 | GET    | `/urls/<id>`                  | Get URL by ID                            |
-| POST   | `/urls`                       | Create a short URL (auto-generates code) |
-| PUT    | `/urls/<id>`                  | Update title or is_active                |
+| POST   | `/urls`                       | Create a short URL (auto-generates 6-char code) |
+| PUT    | `/urls/<id>`                  | Update `title` or `is_active`            |
+| DELETE | `/urls/<id>`                  | Delete a URL and its events (idempotent, always 204) |
 
 **Create URL body:**
 ```json
@@ -77,9 +79,17 @@ curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
 
 | Method | Endpoint   | Description       |
 |--------|------------|-------------------|
-| GET    | `/events`  | List all events   |
+| GET    | `/events`  | List all events — filter via query params or JSON body: `url_id`, `user_id`, `event_type` |
+| POST   | `/events`  | Create an event   |
 
-Events are created automatically when a URL is created (`event_type: "created"`).
+Events are created automatically when a URL is created (`event_type: "created"`). Additional events (e.g. `click`, `view`) can be created manually.
+
+**Create event body:**
+```json
+{ "url_id": 1, "user_id": 1, "event_type": "click", "details": { "referrer": "https://google.com" } }
+```
+
+`user_id` and `details` are optional.
 
 ---
 
@@ -114,6 +124,33 @@ docker exec hackathon-db psql -U postgres -d hackathon_db -c "SELECT setval(pg_g
 
 ---
 
+## Running Specific Services
+
+The `docker-compose.yml` defines five services: `db`, `web`, `nginx`, `db_test`, and `k6`. You rarely need all of them at once.
+
+**App only (db + web + nginx) — typical dev workflow:**
+```bash
+docker compose up db web nginx --build
+```
+
+**App DB only — if you just need Postgres for local development:**
+```bash
+docker compose up db -d
+```
+
+**Test DB only — for system tests without spinning up the full app:**
+```bash
+docker compose up db_test -d
+```
+
+**Stop and remove a specific service:**
+```bash
+docker compose stop db_test
+docker compose rm -f db_test
+```
+
+---
+
 ## Running Tests
 
 ### Unit Tests
@@ -125,6 +162,15 @@ uv sync --group dev
 
 # 2. Run unit tests
 uv run pytest -m unit
+
+# Run with coverage
+uv run pytest -m unit --cov
+
+# Run a single test file
+uv run pytest tests/test_unit.py
+
+# Run a single test by name
+uv run pytest -m unit -k "test_name"
 ```
 
 ### System Tests
@@ -139,6 +185,17 @@ docker compose up db_test -d
 
 # 3. Run system tests
 uv run pytest -m system
+
+# Run with coverage
+uv run pytest -m system --cov
+
+# Run system tests for a single resource
+uv run pytest tests/test_users.py
+uv run pytest tests/test_urls.py
+uv run pytest tests/test_events.py
+
+# Run a single test by name
+uv run pytest -m system -k "test_name"
 ```
 
 System tests run on a separate test_DB on port `5433` with database `hackathon_test_db`. Tables are created and dropped automatically between tests.
@@ -179,8 +236,7 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 │   ├── test_health.py
 │   ├── test_users.py
 │   ├── test_urls.py
-│   ├── test_events.py
-│   └── test_redirect.py
+│   └── test_events.py
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
 ├── Dockerfile
@@ -190,6 +246,37 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── nginx.conf
 └── .env.example
 ```
+
+## Error Handling
+
+All errors are returned as JSON — never HTML.
+
+### 404 — Not Found
+
+Two layers handle 404s:
+
+1. **Route-level** — each handler catches Peewee's `DoesNotExist` and returns a specific message.
+2. **Global fallback** — `@app.errorhandler(404)` catches any unmatched route and returns `{"error": "Not found"}`.
+
+| Endpoint | Trigger |
+|----------|---------|
+| `GET /users/<id>` | User ID not in DB |
+| `PUT /users/<id>` | User ID not in DB |
+| `GET /urls/<id>` | URL ID not in DB |
+| `PUT /urls/<id>` | URL ID not in DB |
+| `POST /urls` | `user_id` references a non-existent user |
+| `POST /events` | `url_id` or `user_id` references a non-existent record |
+| `GET /<short_code>` | Short code not found or URL is inactive |
+| Any unknown route | No matching Flask route |
+
+### 500 — Internal Server Error
+
+Two layers handle 500s:
+
+1. **Route-level** — `POST /urls` explicitly returns 500 if short code generation fails after 10 collision attempts.
+2. **Global fallback** — `@app.errorhandler(500)` catches any unhandled exception and returns `{"error": "Internal server error"}`.
+
+---
 
 ## Prerequisites
 

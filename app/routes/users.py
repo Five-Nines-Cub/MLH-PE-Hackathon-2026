@@ -90,6 +90,16 @@ def create_user():
     return jsonify(user.to_dict()), 201
 
 
+@users_bp.route("/<int:user_id>", methods=["DELETE"])
+def delete_user(user_id):
+    try:
+        user = User.get_by_id(user_id)
+        user.delete_instance()
+    except User.DoesNotExist:
+        pass
+    return "", 204
+
+
 @users_bp.route("/<int:user_id>", methods=["PUT"])
 def update_user(user_id):
     try:

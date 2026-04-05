@@ -107,6 +107,108 @@ def test_list_urls_no_filter_returns_all(client, user):
 
 
 
+def test_list_urls_filter_active(client, user):
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://active.com"})
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://inactive.com"})
+    url_id = created.get_json()["id"]
+    client.put(f"/urls/{url_id}", json={"is_active": False})
+
+    res = client.get("/urls?is_active=true")
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["is_active"] is True
+
+
+def test_list_urls_filter_inactive(client, user):
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://active.com"})
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://inactive.com"})
+    url_id = created.get_json()["id"]
+    client.put(f"/urls/{url_id}", json={"is_active": False})
+
+    res = client.get("/urls?is_active=false")
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["is_active"] is False
+
+
+def test_list_urls_filter_user_via_body(client, user):
+    other = client.post("/users", json={"username": "bob", "email": "bob@example.com"}).get_json()
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://alice.com"})
+    client.post("/urls", json={"user_id": other["id"], "original_url": "https://bob.com"})
+
+    res = client.get("/urls", json={"user_id": user["id"]})
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["user_id"] == user["id"]
+
+
+def test_list_urls_filter_active_via_body(client, user):
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://active.com"})
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://inactive.com"})
+    client.put(f"/urls/{created.get_json()['id']}", json={"is_active": False})
+
+    res = client.get("/urls", json={"is_active": "true"})
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["is_active"] is True
+
+
+def test_list_urls_filter_user_and_active(client, user):
+    other = client.post("/users", json={"username": "bob", "email": "bob@example.com"}).get_json()
+
+    client.post("/urls", json={"user_id": user["id"], "original_url": "https://alice-active.com"})
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://alice-inactive.com"})
+    client.put(f"/urls/{created.get_json()['id']}", json={"is_active": False})
+    client.post("/urls", json={"user_id": other["id"], "original_url": "https://bob-active.com"})
+
+    res = client.get(f"/urls?user_id={user['id']}&is_active=true")
+    assert res.status_code == 200
+    urls = res.get_json()
+    assert len(urls) == 1
+    assert urls[0]["user_id"] == user["id"]
+    assert urls[0]["is_active"] is True
+
+
+def test_delete_url(client, user):
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://example.com"})
+    url_id = created.get_json()["id"]
+
+    assert client.delete(f"/urls/{url_id}").status_code == 204
+    assert client.get(f"/urls/{url_id}").status_code == 404
+
+
+def test_delete_url_not_found(client):
+    assert client.delete("/urls/999").status_code == 204
+
+
+def test_delete_url_cascades_events(client, user):
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://example.com"})
+    url_id = created.get_json()["id"]
+
+    events_before = client.get("/events").get_json()
+    assert any(e["url_id"] == url_id for e in events_before)
+
+    client.delete(f"/urls/{url_id}")
+
+    events_after = client.get("/events").get_json()
+    assert not any(e["url_id"] == url_id for e in events_after)
+
+
+def test_delete_url_short_code_returns_404(client, user):
+    created = client.post("/urls", json={"user_id": user["id"], "original_url": "https://example.com"})
+    short_code = created.get_json()["short_code"]
+    url_id = created.get_json()["id"]
+
+    client.delete(f"/urls/{url_id}")
+
+    res = client.get(f"/{short_code}", follow_redirects=False)
+    assert res.status_code == 404
+
+
 def test_short_codes_are_unique(client, user):
     codes = set()
     for i in range(20):

@@ -42,9 +42,10 @@ def init_db(app):
 
     @app.before_request
     def _db_connect():
-        db.connect(reuse_if_open=True)
+        if not os.environ.get("SKIP_DB_INIT"):
+            db.connect(reuse_if_open=True)
 
     @app.teardown_appcontext
     def _db_close(exc):
-        if not db.is_closed():
+        if not os.environ.get("SKIP_DB_INIT") and not db.is_closed():
             db.close()

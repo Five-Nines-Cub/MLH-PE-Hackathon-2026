@@ -4,9 +4,9 @@ services:
     container_name: hackathon-db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hackathon_db
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      POSTGRES_DB: ${DATABASE_NAME:-hackathon_db}
     ports:
       - "5432:5432"
     volumes:
@@ -23,12 +23,12 @@ services:
     build: .
     environment:
       DATABASE_HOST: hackathon-db
-      DATABASE_PORT: 5432
-      DATABASE_NAME: hackathon_db
-      DATABASE_USER: postgres
-      DATABASE_PASSWORD: postgres
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_NAME: ${DATABASE_NAME:-hackathon_db}
+      DATABASE_USER: ${DATABASE_USER:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
       PYTHONUNBUFFERED: "1"
-    command: flask run --host=0.0.0.0 --port=5000
+    command: gunicorn --workers=2 --bind=0.0.0.0:5000 "app:create_app()"
     depends_on:
       db:
         condition: service_healthy
