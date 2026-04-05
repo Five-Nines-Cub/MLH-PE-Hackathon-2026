@@ -26,11 +26,13 @@ def init_db(app):
 
     # initialize Redis cache client
     global cache
+    if os.environ.get("SKIP_DB_INIT"):
+        return
     try:
         redis_host = os.environ.get("REDIS_HOST", "redis")
         redis_port = int(os.environ.get("REDIS_PORT", 6379))
         redis_db = int(os.environ.get("REDIS_DB", 0))
-        cache = redis.Redis(host=redis_host, port=redis_port, db=redis_db, decode_responses=True)
+        cache = redis.Redis(host=redis_host, port=redis_port, db=redis_db, decode_responses=True, socket_connect_timeout=1, socket_timeout=1)
         # smoke test (non-raising): ping
         try:
             cache.ping()
