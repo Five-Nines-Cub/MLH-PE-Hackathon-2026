@@ -1,11 +1,15 @@
-import json
-from datetime import datetime, timezone
 
-from flask import Blueprint, jsonify, request
+import json
+import os
+
+from datetime import datetime, timezone
+from flask import Blueprint, jsonify, request, current_app
 
 from app.models.event import Event
 from app.models.url import Url
 from app.models.user import User
+from app.database import cache
+
 
 events_bp = Blueprint("events", __name__, url_prefix="/events")
 

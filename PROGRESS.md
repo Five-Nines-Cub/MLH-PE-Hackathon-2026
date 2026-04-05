@@ -71,7 +71,28 @@ Screenshot of terminal output showing 200 concurrent users:
 Screenshot of terminal output showing 2 docker containers and nginx container:  
 ![Docker and Nginx Containers](/report-images/docker_nginx_container.png)
 
+### 🥇 Tier 3: Gold
 
+| Objective | Status | Notes |
+|-----------|--------|-------|
+| Handle 500+ concurrent users (or 100 req/sec) | TODO |  |
+| Implement Redis | ✅ Done | TODO: Link to documentation |
+| Identifying Bottlenecks | ✅ Done |  |
+| Error rate must stay under 5% | TODO |  |
+
+#### Verification  
+Evidence of caching:  
+![Evidence Of Caching](/report-images/caching.png)
+
+Screenshot of terminal output showing 500+ concurrent users:  
+![Docker and Nginx Containers](/report-images/docker_nginx_container.png)
+
+Bottleneck Report:  
+I ran docker ps to identify which parts of the system were under the most stress. The image below was taken from a 500+ concurrent user run with 2 web server instances and a nginx load balancer. From the image below, we can see that the database's CPU exceeds 100%, meaning this is the likely source of the bottleneck. 
+
+The webservers are also very overloaded, 
+
+![Docker and Nginx Containers](/report-images/bottleneck.png)
 
 
 ---
