@@ -1,7 +1,7 @@
 ## 🚨 Failure Manual
 
 This file documents how the system behaves under failure, how to reproduce issues, and how to recover.
-
+TODO: FINISH
 ---
 
 ## 🧱 System Components

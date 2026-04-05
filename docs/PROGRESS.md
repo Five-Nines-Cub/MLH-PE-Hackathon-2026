@@ -11,7 +11,7 @@
 
 #### Verification  
 Screenshot of `GET /health` returning 200:  
-![Health End Point](/report-images/Health_endpoint.png)  
+![Health End Point](docs/report-images/Health_endpoint.png)  
 
 Screenshot of Github Action CI with passing tests:  
 ![Github CI](/report-images/GithubCI.png)  

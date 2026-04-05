@@ -5,7 +5,6 @@ A URL shortener REST API built with Flask, Peewee ORM, and PostgreSQL.
 **Stack:** Flask · Peewee ORM · PostgreSQL · uv
 
 ---
-
 ## Starting The Docker Container
 
 ```bash
@@ -21,75 +20,6 @@ docker compose up --build
 # 4. Start the docker container with a specified number of instances
 docker compose up --build --scale web=<NumInstances>
 ```
-
----
-
-## API Reference
-
-### Health & Redirect
-
-| Method | Endpoint        | Description |
-|--------|-----------------|-------------|
-| GET    | `/health`       | Returns `{"status":"ok"}` |
-| GET    | `/<short_code>` | Redirects browser to original URL (301); 404 if inactive or not found |
-
----
-
-### Users
-
-| Method | Endpoint          | Description              |
-|--------|-------------------|--------------------------|
-| GET    | `/users`          | List all users (optional `?page=&per_page=`) |
-| GET    | `/users/<id>`     | Get user by ID           |
-| POST   | `/users`          | Create a user            |
-| PUT    | `/users/<id>`     | Update a user            |
-| DELETE | `/users/<id>`     | Delete a user            |
-| POST   | `/users/bulk`     | Bulk import from CSV     |
-
-**Create user body:**
-```json
-{ "username": "alice", "email": "alice@example.com" }
-```
-
-**Bulk import:**
-```bash
-curl -X POST http://localhost:8080/users/bulk -F "file=@users.csv"
-```
-
----
-
-### URLs
-
-| Method | Endpoint                      | Description                              |
-|--------|-------------------------------|------------------------------------------|
-| GET    | `/urls`                       | List all URLs — filter via query params or JSON body: `user_id`, `is_active=true\|false` |
-| GET    | `/urls/<id>`                  | Get URL by ID                            |
-| POST   | `/urls`                       | Create a short URL (auto-generates 6-char code) |
-| PUT    | `/urls/<id>`                  | Update `title` or `is_active`            |
-| DELETE | `/urls/<id>`                  | Delete a URL and its events (idempotent, always 204) |
-
-**Create URL body:**
-```json
-{ "user_id": 1, "original_url": "https://example.com", "title": "Example" }
-```
-
----
-
-### Events
-
-| Method | Endpoint   | Description       |
-|--------|------------|-------------------|
-| GET    | `/events`  | List all events — filter via query params or JSON body: `url_id`, `user_id`, `event_type` |
-| POST   | `/events`  | Create an event   |
-
-Events are created automatically when a URL is created (`event_type: "created"`). Additional events (e.g. `click`, `view`) can be created manually.
-
-**Create event body:**
-```json
-{ "url_id": 1, "user_id": 1, "event_type": "click", "details": { "referrer": "https://google.com" } }
-```
-
-`user_id` and `details` are optional.
 
 ---
 
@@ -240,6 +170,10 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 │   ├── test_health.py
 │   ├── test_users.py
 │   ├── test_urls.py
+│   ├── test_metrics.py
+│   ├── test_database_init.py
+│   ├── test_models_event.py
+│   ├── test_redirect.py
 │   └── test_events.py
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
@@ -247,38 +181,20 @@ Tests run against a real PostgreSQL instance using the same `DATABASE_*` env var
 ├── load_test_k6.js
 ├── pyproject.toml
 ├── nginx.conf
-└── .env.example
+├── .env.example
+├── docs/
+│   ├── architecture.md        # Bronze: architecture diagram (boxes + arrows)
+│   ├── deploy.md              # deployment and rollback guide
+│   ├── api.md                 # API Guide
+│   ├── failure-manual.md      
+│   ├── troubleshooting.md     # Silver: bugs you hit today + fixes
+│   ├── config.md              # Silver: all environment variables listed
+│   ├── runbooks/
+│   │   ├── service-down.md    # Gold: what to do when health check fails
+│   │   └── high-error-rate.md # Gold: what to do when error rate spikes
+│   ├── decisions.md           # Gold: why Redis, why Nginx, why Peewee, etc.
+│   └── capacity.md            # Gold: load test results, estimated user limits
 ```
-
-## Error Handling
-
-All errors are returned as JSON — never HTML.
-
-### 404 — Not Found
-
-Two layers handle 404s:
-
-1. **Route-level** — each handler catches Peewee's `DoesNotExist` and returns a specific message.
-2. **Global fallback** — `@app.errorhandler(404)` catches any unmatched route and returns `{"error": "Not found"}`.
-
-| Endpoint | Trigger |
-|----------|---------|
-| `GET /users/<id>` | User ID not in DB |
-| `PUT /users/<id>` | User ID not in DB |
-| `GET /urls/<id>` | URL ID not in DB |
-| `PUT /urls/<id>` | URL ID not in DB |
-| `POST /urls` | `user_id` references a non-existent user |
-| `POST /events` | `url_id` or `user_id` references a non-existent record |
-| `GET /<short_code>` | Short code not found or URL is inactive |
-| Any unknown route | No matching Flask route |
-
-### 500 — Internal Server Error
-
-Two layers handle 500s:
-
-1. **Route-level** — `POST /urls` explicitly returns 500 if short code generation fails after 10 collision attempts.
-2. **Global fallback** — `@app.errorhandler(500)` catches any unhandled exception and returns `{"error": "Internal server error"}`.
-
 ---
 
 ## Prerequisites
