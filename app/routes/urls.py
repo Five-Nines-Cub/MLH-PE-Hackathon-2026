@@ -113,6 +113,8 @@ def get_url(url_id):
 def delete_url(url_id):
     try:
         url = Url.get_by_id(url_id)
+        _cache_delete(f"url:{url_id}")
+        _cache_delete(f"short_code:{url.short_code}")
         Event.delete().where(Event.url == url).execute()
         url.delete_instance()
     except Url.DoesNotExist:
@@ -137,9 +139,7 @@ def update_url(url_id):
     url.updated_at = datetime.now(timezone.utc)
     url.save()
 
-    # invalidate cache for this url
-    cache_key = f"url:{url_id}"
-    current_app.logger.info("Invalidating cache for %s", cache_key)
-    _cache_delete(cache_key)
+    _cache_delete(f"url:{url_id}")
+    _cache_delete(f"short_code:{url.short_code}")
 
     return jsonify(url.to_dict()), 200
