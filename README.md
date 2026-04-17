@@ -2,6 +2,8 @@
 
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/2j3wi.svg)](https://uptime.betterstack.com/?utm_source=status_badge). 
 
+# First Place Winner & Best All-Around Team
+![Winner Image](/docs/report-images/Winner.png)
 
 A URL shortener REST API built with Flask, Peewee ORM, and PostgreSQL.
 
